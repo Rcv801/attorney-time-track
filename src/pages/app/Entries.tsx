@@ -17,7 +17,7 @@ export default function Entries() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate,color)")
+        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
@@ -74,6 +74,7 @@ export default function Entries() {
           </div>
           <Button onClick={downloadCSV} disabled={!csv}>Export CSV</Button>
           <Button variant="outline" onClick={()=>window.print()}>Print</Button>
+          <div className="ml-auto text-sm text-muted-foreground">Totals: {toHhMm(totals.seconds)} • {fmt.format(totals.amount)}</div>
         </CardContent>
       </Card>
       <Card>

@@ -26,7 +26,7 @@ export default function Dashboard() {
   const { data: clients } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id,name,color,hourly_rate").order("name");
+      const { data, error } = await supabase.from("clients").select("id,name,hourly_rate").order("name");
       if (error) throw error; return data as any[];
     },
   });
@@ -56,7 +56,7 @@ export default function Dashboard() {
       const from = startOfLocalDayUtc().toISOString();
       const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate,color)")
+        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate)")
         .gte("start_at", from)
         .order("start_at", { ascending: false });
       if (error) throw error; return data as any[];
@@ -125,9 +125,7 @@ export default function Dashboard() {
               </SelectTrigger>
               <SelectContent>
                 {clients?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <span className="inline-flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />{c.name}</span>
-                  </SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -150,13 +148,10 @@ export default function Dashboard() {
             const amount = e.duration_sec ? (Number(e.client?.hourly_rate ?? 0) * (e.duration_sec / 3600)) : 0;
             return (
               <div key={e.id} className="flex items-center justify-between border rounded p-2">
-                <div className="text-sm flex items-start gap-2">
-                  <span className="inline-block h-3 w-3 rounded-full mt-1" style={{ backgroundColor: e.client?.color ?? '#9ca3af' }} />
-                  <div>
-                    <div className="font-medium">{e.client?.name}</div>
-                    <div className="text-muted-foreground">{new Date(e.start_at).toLocaleTimeString()} – {e.end_at ? new Date(e.end_at).toLocaleTimeString() : "…"}</div>
-                    <div>{e.notes}</div>
-                  </div>
+                <div className="text-sm">
+                  <div className="font-medium">{e.client?.name}</div>
+                  <div className="text-muted-foreground">{new Date(e.start_at).toLocaleTimeString()} – {e.end_at ? new Date(e.end_at).toLocaleTimeString() : "…"}</div>
+                  <div>{e.notes}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-sm font-medium">{amount ? fmt.format(amount) : ""}</div>
