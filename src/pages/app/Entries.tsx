@@ -8,6 +8,17 @@ import SEO from "@/components/SEO";
 import EntryFormDialog from "@/components/EntryFormDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString(); }
 
 export default function Entries() {
@@ -88,6 +99,16 @@ export default function Entries() {
     else { qc.invalidateQueries({ queryKey: ["entries"] }); toast({ title: "Entry updated" }); }
   };
 
+  const onDelete = async (id: string) => {
+    const { error } = await supabase.from("entries").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Could not delete entry", description: error.message });
+    } else {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      toast({ title: "Entry deleted" });
+    }
+  };
+
   const downloadCSV = () => {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -136,7 +157,7 @@ export default function Entries() {
               <div>{e.end_at ? new Date(e.end_at).toLocaleString() : "–"}</div>
               <div>{e.duration_sec ? `${Math.floor(e.duration_sec/3600)}h ${Math.floor((e.duration_sec%3600)/60)}m` : "–"}</div>
               <div className="md:col-span-5">{e.notes}</div>
-              <div className="md:col-span-5 flex justify-end">
+              <div className="md:col-span-5 flex justify-end gap-2">
                 <EntryFormDialog
                   trigger={<Button variant="outline" size="sm">Edit</Button>}
                   title="Edit entry"
@@ -144,6 +165,23 @@ export default function Entries() {
                   clients={clients}
                   onSubmit={onUpdate}
                 />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">Delete</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete entry?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. The entry will be permanently removed.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDelete(e.id)}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           ))}
