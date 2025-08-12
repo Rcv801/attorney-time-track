@@ -116,42 +116,46 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle>Timer</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="text-5xl font-bold">{elapsedHMS}</div>
+        <CardContent className="space-y-6">
+          <div className="text-6xl md:text-7xl font-bold">{elapsedHMS}</div>
           {running && <div className="text-muted-foreground">So far: {fmt.format(activeAmount || 0)}</div>}
-          <div className="grid sm:grid-cols-3 gap-3">
-            <Select onValueChange={setClientId} value={clientId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <span className="inline-flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />{c.name}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-col gap-2">
-              <Textarea rows={7} placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">Expand</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Edit notes</DialogTitle>
-                  </DialogHeader>
-                  <Textarea rows={12} value={notes} onChange={(e) => setNotes(e.target.value)} />
-                </DialogContent>
-              </Dialog>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+              <div className="md:col-span-1">
+                <Select onValueChange={setClientId} value={clientId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span className="inline-flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />{c.name}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-2 md:col-span-2">
+                <Textarea rows={8} placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">Expand</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit notes</DialogTitle>
+                    </DialogHeader>
+                    <Textarea rows={12} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="md:col-span-1">
+                {running ? (
+                  <Button onClick={() => stopMut.mutate()} disabled={stopMut.isPending}>Stop</Button>
+                ) : (
+                  <Button onClick={() => startMut.mutate()} disabled={startMut.isPending || !clientId || !user}>Start</Button>
+                )}
+              </div>
             </div>
-            {running ? (
-              <Button onClick={() => stopMut.mutate()} disabled={stopMut.isPending}>Stop</Button>
-            ) : (
-              <Button onClick={() => startMut.mutate()} disabled={startMut.isPending || !clientId || !user}>Start</Button>
-            )}
-          </div>
         </CardContent>
       </Card>
 

@@ -74,9 +74,19 @@ export default function Clients() {
                   <div className="text-xs text-muted-foreground">{c.archived ? "Archived" : "Active"} • ${Number(c.hourly_rate ?? 0).toFixed(2)}/hr</div>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={c.color ?? '#9ca3af'}
+                  onChange={async (e) => {
+                    await supabase.from('clients').update({ color: e.target.value }).eq('id', c.id)
+                    qc.invalidateQueries({ queryKey: ['clients'] })
+                  }}
+                  className="h-9 w-12 rounded border"
+                  aria-label="Client color"
+                />
                 <Button variant="outline" size="sm" onClick={() => rename(c.id, c.name, Number(c.hourly_rate ?? 0), c.color)}>Edit</Button>
-                <Button variant="secondary" size="sm" onClick={() => toggleArchive(c.id, c.archived)}>{c.archived ? "Unarchive" : "Archive"}</Button>
+                <Button variant="secondary" size="sm" onClick={() => toggleArchive(c.id, c.archived)}>{c.archived ? 'Unarchive' : 'Archive'}</Button>
               </div>
             </div>
           ))}
