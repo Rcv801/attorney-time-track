@@ -11,18 +11,21 @@ export default function Clients() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const [name, setName] = useState("");
+  const [color, setColor] = useState<string>("#4f46e5");
+  const [rate, setRate] = useState<string>("0");
 
   const { data: clients } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id,name,archived").order("name");
+      const { data, error } = await supabase.from("clients").select("id,name,archived,color,hourly_rate").order("name");
       if (error) throw error; return data;
     },
   });
 
   const add = async () => {
     if (!name.trim() || !user) return;
-    await supabase.from("clients").insert({ name, user_id: user.id });
+    const hourly_rate = Number.parseFloat(rate || "0");
+    await supabase.from("clients").insert({ name, user_id: user.id, color, hourly_rate });
     setName("");
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
@@ -32,10 +35,11 @@ export default function Clients() {
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
 
-  const rename = async (id: string) => {
-    const v = prompt("New name?");
-    if (!v) return;
-    await supabase.from("clients").update({ name: v }).eq("id", id);
+  const rename = async (id: string, currentName: string, currentRate: number, currentColor?: string | null) => {
+    const v = prompt("New name?", currentName) ?? currentName;
+    const r = prompt("Hourly rate?", String(currentRate ?? 0)) ?? String(currentRate ?? 0);
+    const c = prompt("Color (hex)", currentColor ?? "#4f46e5") ?? (currentColor ?? "#4f46e5");
+    await supabase.from("clients").update({ name: v, hourly_rate: Number.parseFloat(r || "0"), color: c }).eq("id", id);
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
 
@@ -46,8 +50,13 @@ export default function Clients() {
         <CardHeader>
           <CardTitle>Add client</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-2">
+        <CardContent className="grid sm:grid-cols-4 gap-2 items-center">
           <Input placeholder="Client name" value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Color</span>
+            <input type="color" value={color} onChange={(e)=>setColor(e.target.value)} className="h-9 w-12 rounded" />
+          </div>
+          <Input type="number" step="0.01" placeholder="Hourly rate" value={rate} onChange={(e)=>setRate(e.target.value)} />
           <Button onClick={add} disabled={!name.trim()}>Add</Button>
         </CardContent>
       </Card>
@@ -58,12 +67,15 @@ export default function Clients() {
         <CardContent className="space-y-2">
           {clients?.map((c) => (
             <div key={c.id} className="flex items-center justify-between border rounded p-2">
-              <div>
-                <div className="font-medium">{c.name}</div>
-                <div className="text-xs text-muted-foreground">{c.archived ? "Archived" : "Active"}</div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />
+                <div>
+                  <div className="font-medium">{c.name}</div>
+                  <div className="text-xs text-muted-foreground">{c.archived ? "Archived" : "Active"} • ${Number(c.hourly_rate ?? 0).toFixed(2)}/hr</div>
+                </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => rename(c.id)}>Rename</Button>
+                <Button variant="outline" size="sm" onClick={() => rename(c.id, c.name, Number(c.hourly_rate ?? 0), c.color)}>Edit</Button>
                 <Button variant="secondary" size="sm" onClick={() => toggleArchive(c.id, c.archived)}>{c.archived ? "Unarchive" : "Archive"}</Button>
               </div>
             </div>

@@ -17,21 +17,27 @@ export type Database = {
       clients: {
         Row: {
           archived: boolean
+          color: string | null
           created_at: string
+          hourly_rate: number
           id: string
           name: string
           user_id: string
         }
         Insert: {
           archived?: boolean
+          color?: string | null
           created_at?: string
+          hourly_rate?: number
           id?: string
           name: string
           user_id: string
         }
         Update: {
           archived?: boolean
+          color?: string | null
           created_at?: string
+          hourly_rate?: number
           id?: string
           name?: string
           user_id?: string

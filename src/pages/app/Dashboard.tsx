@@ -26,8 +26,8 @@ export default function Dashboard() {
   const { data: clients } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id,name").order("name");
-      if (error) throw error; return data;
+      const { data, error } = await supabase.from("clients").select("id,name,color,hourly_rate").order("name");
+      if (error) throw error; return data as any[];
     },
   });
 
@@ -56,7 +56,7 @@ export default function Dashboard() {
       const from = startOfLocalDayUtc().toISOString();
       const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,end_at,duration_sec,notes,client:clients(name)")
+        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate,color)")
         .gte("start_at", from)
         .order("start_at", { ascending: false });
       if (error) throw error; return data as any[];
@@ -92,6 +92,8 @@ export default function Dashboard() {
   });
 
   const running = Boolean(active);
+  const activeRate = clients?.find(c => c.id === (active?.client_id ?? clientId))?.hourly_rate ?? 0;
+  const activeAmount = running ? (elapsed/3600) * Number(activeRate ?? 0) : 0;
   const elapsedHMS = useMemo(() => {
     let s = 0;
     if (running && active?.start_at) {
@@ -104,6 +106,7 @@ export default function Dashboard() {
     const ss = String(s % 60).padStart(2, "0");
     return `${hh}:${mm}:${ss}`;
   }, [elapsed, running, active]);
+  const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' });
 
   return (
     <div className="space-y-6">
@@ -114,6 +117,7 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="text-5xl font-bold">{elapsedHMS}</div>
+          {running && <div className="text-muted-foreground">So far: {fmt.format(activeAmount || 0)}</div>}
           <div className="grid sm:grid-cols-3 gap-3">
             <Select onValueChange={setClientId} value={clientId}>
               <SelectTrigger>
@@ -121,7 +125,9 @@ export default function Dashboard() {
               </SelectTrigger>
               <SelectContent>
                 {clients?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    <span className="inline-flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />{c.name}</span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -140,19 +146,28 @@ export default function Dashboard() {
           <CardTitle>Today’s entries</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {todays?.length ? todays.map((e) => (
-            <div key={e.id} className="flex items-center justify-between border rounded p-2">
-              <div className="text-sm">
-                <div className="font-medium">{e.client?.name}</div>
-                <div className="text-muted-foreground">{new Date(e.start_at).toLocaleTimeString()} – {e.end_at ? new Date(e.end_at).toLocaleTimeString() : "…"}</div>
-                <div>{e.notes}</div>
+          {todays?.length ? todays.map((e) => {
+            const amount = e.duration_sec ? (Number(e.client?.hourly_rate ?? 0) * (e.duration_sec / 3600)) : 0;
+            return (
+              <div key={e.id} className="flex items-center justify-between border rounded p-2">
+                <div className="text-sm flex items-start gap-2">
+                  <span className="inline-block h-3 w-3 rounded-full mt-1" style={{ backgroundColor: e.client?.color ?? '#9ca3af' }} />
+                  <div>
+                    <div className="font-medium">{e.client?.name}</div>
+                    <div className="text-muted-foreground">{new Date(e.start_at).toLocaleTimeString()} – {e.end_at ? new Date(e.end_at).toLocaleTimeString() : "…"}</div>
+                    <div>{e.notes}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-medium">{amount ? fmt.format(amount) : ""}</div>
+                  <Button variant="outline" size="sm" onClick={async () => {
+                    await supabase.from("entries").delete().eq("id", e.id);
+                    qc.invalidateQueries({ queryKey: ["entries-today"] });
+                  }}>Delete</Button>
+                </div>
               </div>
-              <Button variant="outline" size="sm" onClick={async () => {
-                await supabase.from("entries").delete().eq("id", e.id);
-                qc.invalidateQueries({ queryKey: ["entries-today"] });
-              }}>Delete</Button>
-            </div>
-          )) : <div className="text-sm text-muted-foreground">No entries yet.</div>}
+            );
+          }) : <div className="text-sm text-muted-foreground">No entries yet.</div>}
         </CardContent>
       </Card>
     </div>

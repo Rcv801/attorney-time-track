@@ -17,7 +17,7 @@ export default function Entries() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,end_at,duration_sec,notes,client:clients(name)")
+        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate,color)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
@@ -25,10 +25,29 @@ export default function Entries() {
     }
   });
 
+  const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' });
+
+  const totals = useMemo(() => {
+    let seconds = 0; let amount = 0;
+    (data ?? []).forEach((e: any) => {
+      const s = e.duration_sec ?? (e.end_at ? (new Date(e.end_at).getTime()-new Date(e.start_at).getTime())/1000 : 0);
+      seconds += s;
+      amount += (s/3600) * Number(e.client?.hourly_rate ?? 0);
+    });
+    return { seconds, amount };
+  }, [data]);
+
+  const toHhMm = (s: number) => `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}`;
+
   const csv = useMemo(() => {
     if (!data?.length) return "";
-    const rows = [["Client","Start","End","Duration(sec)","Notes"], ...data.map(e => [e.client?.name, e.start_at, e.end_at ?? "", e.duration_sec ?? "", (e.notes ?? "").replace(/\n/g," ")])];
-    return rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(",")).join("\n");
+    const header = ["Client","Start","End","Duration(sec)","Amount","Notes"];
+    const rows = data.map((e: any) => {
+      const s = e.duration_sec ?? (e.end_at ? (new Date(e.end_at).getTime()-new Date(e.start_at).getTime())/1000 : 0);
+      const amt = (s/3600) * Number(e.client?.hourly_rate ?? 0);
+      return [e.client?.name, e.start_at, e.end_at ?? "", s, amt.toFixed(2), (e.notes ?? "").replace(/\n/g, " ")];
+    });
+    return [header, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(",")).join("\n");
   }, [data]);
 
   const downloadCSV = () => {
@@ -37,7 +56,6 @@ export default function Entries() {
     const a = document.createElement('a');
     a.href = url; a.download = 'entries.csv'; a.click(); URL.revokeObjectURL(url);
   };
-
   return (
     <div className="space-y-6">
       <SEO title="Entries – Time App" description="Browse and export time entries." canonical={window.location.href} />
