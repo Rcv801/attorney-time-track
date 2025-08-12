@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -13,7 +16,7 @@ export default function Clients() {
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>("#4f46e5");
   const [rate, setRate] = useState<string>("0");
-
+  const [notes, setNotes] = useState<string>("");
   const { data: clients } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
@@ -25,8 +28,11 @@ export default function Clients() {
   const add = async () => {
     if (!name.trim() || !user) return;
     const hourly_rate = Number.parseFloat(rate || "0");
-    await supabase.from("clients").insert({ name, user_id: user.id, color, hourly_rate });
+    await supabase.from("clients").insert({ name, user_id: user.id, color, hourly_rate, notes: notes || null });
     setName("");
+    setRate("0");
+    setColor("#4f46e5");
+    setNotes("");
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
 
@@ -50,14 +56,44 @@ export default function Clients() {
         <CardHeader>
           <CardTitle>Add client</CardTitle>
         </CardHeader>
-        <CardContent className="grid sm:grid-cols-4 gap-2 items-center">
-          <Input placeholder="Client name" value={name} onChange={(e) => setName(e.target.value)} />
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Color</span>
-            <input type="color" value={color} onChange={(e)=>setColor(e.target.value)} className="h-9 w-12 rounded" />
-          </div>
-          <Input type="number" step="0.01" placeholder="Hourly rate" value={rate} onChange={(e)=>setRate(e.target.value)} />
-          <Button onClick={add} disabled={!name.trim()}>Add</Button>
+        <CardContent>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="secondary">Add Client</Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Add client</SheetTitle>
+                <SheetDescription>Provide client details, including hourly rate and notes.</SheetDescription>
+              </SheetHeader>
+              <div className="mt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client-name">Name</Label>
+                  <Input id="client-name" placeholder="Acme Co." value={name} onChange={(e)=>setName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="client-color">Color</Label>
+                  <input id="client-color" type="color" value={color} onChange={(e)=>setColor(e.target.value)} className="h-9 w-12 rounded border" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="client-rate">Hourly rate</Label>
+                  <Input id="client-rate" type="number" inputMode="decimal" step="0.01" value={rate} onChange={(e)=>setRate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="client-notes">Notes</Label>
+                  <Textarea id="client-notes" rows={5} placeholder="Notes about this client (optional)" value={notes} onChange={(e)=>setNotes(e.target.value)} />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-2">
+                <SheetClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Button onClick={add} disabled={!name.trim()}>Save</Button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+          </Sheet>
         </CardContent>
       </Card>
       <Card>
