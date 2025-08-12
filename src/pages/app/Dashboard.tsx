@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
+import EntryFormDialog from "@/components/EntryFormDialog";
 
 function startOfLocalDayUtc() {
   const now = new Date();
@@ -57,7 +58,7 @@ export default function Dashboard() {
       const from = startOfLocalDayUtc().toISOString();
       const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate,color)")
+        .select("id,client_id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate,color)")
         .gte("start_at", from)
         .order("start_at", { ascending: false });
       if (error) throw error; return data as any[];
@@ -108,6 +109,34 @@ export default function Dashboard() {
     return `${hh}:${mm}:${ss}`;
   }, [elapsed, running, active]);
   const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' });
+  const tz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
+
+  const onCreate = async (values: { client_id: string; start_at: string; end_at?: string | null; notes?: string | null }) => {
+    if (!user) return;
+    const { error } = await supabase.from("entries").insert({
+      user_id: user.id,
+      client_id: values.client_id,
+      start_at: values.start_at,
+      end_at: values.end_at ?? null,
+      notes: values.notes ?? null,
+    });
+    if (!error) {
+      qc.invalidateQueries({ queryKey: ["entries-today"] });
+    }
+  };
+
+  const onUpdate = async (values: { id?: string; client_id: string; start_at: string; end_at?: string | null; notes?: string | null }) => {
+    if (!values.id) return;
+    const { error } = await supabase.from("entries").update({
+      client_id: values.client_id,
+      start_at: values.start_at,
+      end_at: values.end_at ?? null,
+      notes: values.notes ?? null,
+    }).eq("id", values.id);
+    if (!error) {
+      qc.invalidateQueries({ queryKey: ["entries-today"] });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -119,6 +148,15 @@ export default function Dashboard() {
         <CardContent className="space-y-6">
           <div className="text-6xl md:text-7xl font-bold">{elapsedHMS}</div>
           {running && <div className="text-muted-foreground">So far: {fmt.format(activeAmount || 0)}</div>}
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">Using time zone: {tz}</div>
+              <EntryFormDialog
+                trigger={<Button variant="secondary" size="sm">Add Entry</Button>}
+                title="Add entry"
+                clients={clients}
+                onSubmit={onCreate}
+              />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
               <div className="md:col-span-1">
                 <Select onValueChange={setClientId} value={clientId}>
@@ -175,6 +213,13 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-sm font-medium">{amount ? fmt.format(amount) : ""}</div>
+                  <EntryFormDialog
+                    trigger={<Button variant="outline" size="sm">Edit</Button>}
+                    title="Edit entry"
+                    initial={{ id: e.id, client_id: e.client?.id ?? e.client_id, start_at: e.start_at, end_at: e.end_at, notes: e.notes }}
+                    clients={clients}
+                    onSubmit={onUpdate}
+                  />
                   <Button variant="outline" size="sm" onClick={async () => {
                     await supabase.from("entries").delete().eq("id", e.id);
                     qc.invalidateQueries({ queryKey: ["entries-today"] });

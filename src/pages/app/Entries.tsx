@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SEO from "@/components/SEO";
-
+import EntryFormDialog from "@/components/EntryFormDialog";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString(); }
 
 export default function Entries() {
@@ -17,7 +19,7 @@ export default function Entries() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate)")
+        .select("id,client_id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
@@ -25,6 +27,17 @@ export default function Entries() {
     }
   });
 
+  const { data: clients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clients").select("id,name,color,hourly_rate").order("name");
+      if (error) throw error; return data as any[];
+    },
+  });
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' });
 
   const totals = useMemo(() => {
@@ -50,6 +63,31 @@ export default function Entries() {
     return [header, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(",")).join("\n");
   }, [data]);
 
+  const onCreate = async (values: { client_id: string; start_at: string; end_at?: string | null; notes?: string | null }) => {
+    if (!user) { toast({ title: "Not signed in", description: "Please sign in to add an entry." }); return; }
+    const { error } = await supabase.from("entries").insert({
+      user_id: user.id,
+      client_id: values.client_id,
+      start_at: values.start_at,
+      end_at: values.end_at ?? null,
+      notes: values.notes ?? null,
+    });
+    if (error) { toast({ title: "Could not add entry", description: error.message }); }
+    else { qc.invalidateQueries({ queryKey: ["entries"] }); toast({ title: "Entry added" }); }
+  };
+
+  const onUpdate = async (values: { id?: string; client_id: string; start_at: string; end_at?: string | null; notes?: string | null }) => {
+    if (!values.id) return;
+    const { error } = await supabase.from("entries").update({
+      client_id: values.client_id,
+      start_at: values.start_at,
+      end_at: values.end_at ?? null,
+      notes: values.notes ?? null,
+    }).eq("id", values.id);
+    if (error) { toast({ title: "Could not update entry", description: error.message }); }
+    else { qc.invalidateQueries({ queryKey: ["entries"] }); toast({ title: "Entry updated" }); }
+  };
+
   const downloadCSV = () => {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -74,7 +112,16 @@ export default function Entries() {
           </div>
           <Button onClick={downloadCSV} disabled={!csv}>Export CSV</Button>
           <Button variant="outline" onClick={()=>window.print()}>Print</Button>
-          <div className="ml-auto text-sm text-muted-foreground">Totals: {toHhMm(totals.seconds)} • {fmt.format(totals.amount)}</div>
+          <EntryFormDialog
+            trigger={<Button variant="secondary">Add Entry</Button>}
+            title="Add entry"
+            clients={clients}
+            onSubmit={onCreate}
+          />
+          <div className="ml-auto flex items-center gap-4 text-sm text-muted-foreground">
+            <span>Totals: {toHhMm(totals.seconds)} • {fmt.format(totals.amount)}</span>
+            <span className="text-xs">Using time zone: {tz}</span>
+          </div>
         </CardContent>
       </Card>
       <Card>
@@ -89,6 +136,15 @@ export default function Entries() {
               <div>{e.end_at ? new Date(e.end_at).toLocaleString() : "–"}</div>
               <div>{e.duration_sec ? `${Math.floor(e.duration_sec/3600)}h ${Math.floor((e.duration_sec%3600)/60)}m` : "–"}</div>
               <div className="md:col-span-5">{e.notes}</div>
+              <div className="md:col-span-5 flex justify-end">
+                <EntryFormDialog
+                  trigger={<Button variant="outline" size="sm">Edit</Button>}
+                  title="Edit entry"
+                  initial={{ id: e.id, client_id: e.client_id, start_at: e.start_at, end_at: e.end_at, notes: e.notes }}
+                  clients={clients}
+                  onSubmit={onUpdate}
+                />
+              </div>
             </div>
           ))}
         </CardContent>
