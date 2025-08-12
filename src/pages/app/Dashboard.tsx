@@ -142,8 +142,15 @@ export default function Dashboard() {
     <div className="space-y-6">
       <SEO title="Dashboard – Time App" description="Track time with a Start/Stop timer and see today’s entries." canonical={window.location.href} />
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Timer</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open('/popout/timer', 'timer-popout', 'width=380,height=560,menubar=no,toolbar=no,location=no,status=no')}
+          >
+            Open Popout
+          </Button>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="text-6xl md:text-7xl font-bold">{elapsedHMS}</div>

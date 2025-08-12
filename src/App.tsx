@@ -13,6 +13,7 @@ import Clients from "./pages/app/Clients";
 import Entries from "./pages/app/Entries";
 import Reports from "./pages/app/Reports";
 import Settings from "./pages/app/Settings";
+import TimerPopout from "./pages/app/TimerPopout";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
         </Route>
+        <Route path="/popout/timer" element={<RequireAuth><TimerPopout /></RequireAuth>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
