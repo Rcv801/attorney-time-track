@@ -41,11 +41,10 @@ export default function Clients() {
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
 
-  const rename = async (id: string, currentName: string, currentRate: number, currentColor?: string | null) => {
+  const rename = async (id: string, currentName: string, currentRate: number) => {
     const v = prompt("New name?", currentName) ?? currentName;
     const r = prompt("Hourly rate?", String(currentRate ?? 0)) ?? String(currentRate ?? 0);
-    const c = prompt("Color (hex)", currentColor ?? "#4f46e5") ?? (currentColor ?? "#4f46e5");
-    await supabase.from("clients").update({ name: v, hourly_rate: Number.parseFloat(r || "0"), color: c }).eq("id", id);
+    await supabase.from("clients").update({ name: v, hourly_rate: Number.parseFloat(r || "0") }).eq("id", id);
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
 
@@ -71,13 +70,16 @@ export default function Clients() {
                   <Label htmlFor="client-name">Name</Label>
                   <Input id="client-name" placeholder="Acme Co." value={name} onChange={(e)=>setName(e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="client-color">Color</Label>
-                  <input id="client-color" type="color" value={color} onChange={(e)=>setColor(e.target.value)} className="h-9 w-12 rounded border" />
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="client-color" className="whitespace-nowrap">Color</Label>
+                  <input id="client-color" type="color" value={color} onChange={(e)=>setColor(e.target.value)} className="h-8 w-8 rounded-md border" aria-label="Client color" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="client-rate">Hourly rate</Label>
-                  <Input id="client-rate" type="number" inputMode="decimal" step="0.01" value={rate} onChange={(e)=>setRate(e.target.value)} />
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input id="client-rate" type="number" inputMode="decimal" step="0.01" value={rate} onChange={(e)=>setRate(e.target.value)} className="pl-7" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="client-notes">Notes</Label>
@@ -121,7 +123,7 @@ export default function Clients() {
                   className="h-9 w-12 rounded border"
                   aria-label="Client color"
                 />
-                <Button variant="outline" size="sm" onClick={() => rename(c.id, c.name, Number(c.hourly_rate ?? 0), c.color)}>Edit</Button>
+                <Button variant="outline" size="sm" onClick={() => rename(c.id, c.name, Number(c.hourly_rate ?? 0))}>Edit</Button>
                 <Button variant="secondary" size="sm" onClick={() => toggleArchive(c.id, c.archived)}>{c.archived ? 'Unarchive' : 'Archive'}</Button>
               </div>
             </div>
