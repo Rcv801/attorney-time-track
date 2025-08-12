@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +27,7 @@ export default function Dashboard() {
   const { data: clients } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id,name,hourly_rate").order("name");
+      const { data, error } = await supabase.from("clients").select("id,name,color,hourly_rate").order("name");
       if (error) throw error; return data as any[];
     },
   });
@@ -56,7 +57,7 @@ export default function Dashboard() {
       const from = startOfLocalDayUtc().toISOString();
       const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate)")
+        .select("id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate,color)")
         .gte("start_at", from)
         .order("start_at", { ascending: false });
       if (error) throw error; return data as any[];
@@ -125,11 +126,26 @@ export default function Dashboard() {
               </SelectTrigger>
               <SelectContent>
                 {clients?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    <span className="inline-flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />{c.name}</span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Input placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <div className="flex flex-col gap-2">
+              <Textarea rows={7} placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">Expand</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit notes</DialogTitle>
+                  </DialogHeader>
+                  <Textarea rows={12} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                </DialogContent>
+              </Dialog>
+            </div>
             {running ? (
               <Button onClick={() => stopMut.mutate()} disabled={stopMut.isPending}>Stop</Button>
             ) : (
