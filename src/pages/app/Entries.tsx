@@ -19,6 +19,7 @@ import {
   AlertDialogAction,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString(); }
 
 export default function Entries() {
@@ -30,7 +31,7 @@ export default function Entries() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("entries")
-        .select("id,client_id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate)")
+        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,client:clients(name,hourly_rate)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
@@ -65,11 +66,11 @@ export default function Entries() {
 
   const csv = useMemo(() => {
     if (!data?.length) return "";
-    const header = ["Client","Start","End","Duration(sec)","Amount","Notes"];
+    const header = ["Client","Start","End","Duration(sec)","Amount","Billed","Notes"];
     const rows = data.map((e: any) => {
       const s = e.duration_sec ?? (e.end_at ? (new Date(e.end_at).getTime()-new Date(e.start_at).getTime())/1000 : 0);
       const amt = (s/3600) * Number(e.client?.hourly_rate ?? 0);
-      return [e.client?.name, e.start_at, e.end_at ?? "", s, amt.toFixed(2), (e.notes ?? "").replace(/\n/g, " ")];
+      return [e.client?.name, e.start_at, e.end_at ?? "", s, amt.toFixed(2), e.billed ? "Yes" : "No", (e.notes ?? "").replace(/\n/g, " ")];
     });
     return [header, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(",")).join("\n");
   }, [data]);
@@ -97,6 +98,16 @@ export default function Entries() {
     }).eq("id", values.id);
     if (error) { toast({ title: "Could not update entry", description: error.message }); }
     else { qc.invalidateQueries({ queryKey: ["entries"] }); toast({ title: "Entry updated" }); }
+  };
+
+  const onToggleBilled = async (id: string, billed: boolean) => {
+    const { error } = await supabase.from("entries").update({ billed }).eq("id", id);
+    if (error) {
+      toast({ title: "Could not update billed status", description: error.message });
+    } else {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      toast({ title: billed ? "Marked as billed" : "Marked as unbilled" });
+    }
   };
 
   const onDelete = async (id: string) => {
@@ -151,13 +162,22 @@ export default function Entries() {
         </CardHeader>
         <CardContent className="space-y-2">
           {data?.map((e)=> (
-            <div key={e.id} className="grid md:grid-cols-5 gap-2 border rounded p-2 text-sm">
+            <div key={e.id} className="grid md:grid-cols-6 gap-2 border rounded p-2 text-sm">
               <div className="font-medium">{e.client?.name}</div>
               <div>{new Date(e.start_at).toLocaleString()}</div>
               <div>{e.end_at ? new Date(e.end_at).toLocaleString() : "–"}</div>
               <div>{e.duration_sec ? `${Math.floor(e.duration_sec/3600)}h ${Math.floor((e.duration_sec%3600)/60)}m` : "–"}</div>
-              <div className="md:col-span-5">{e.notes}</div>
-              <div className="md:col-span-5 flex justify-end gap-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`billed-${e.id}`}
+                  checked={!!e.billed}
+                  onCheckedChange={(v) => onToggleBilled(e.id, Boolean(v))}
+                  aria-label="Mark entry as billed"
+                />
+                <label htmlFor={`billed-${e.id}`} className="text-xs">Billed</label>
+              </div>
+              <div className="md:col-span-6">{e.notes}</div>
+              <div className="md:col-span-6 flex justify-end gap-2">
                 <EntryFormDialog
                   trigger={<Button variant="outline" size="sm">Edit</Button>}
                   title="Edit entry"

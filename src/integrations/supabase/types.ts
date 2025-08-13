@@ -57,6 +57,7 @@ export type Database = {
       }
       entries: {
         Row: {
+          billed: boolean
           client_id: string
           created_at: string
           duration_sec: number | null
@@ -67,6 +68,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          billed?: boolean
           client_id: string
           created_at?: string
           duration_sec?: number | null
@@ -77,6 +79,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          billed?: boolean
           client_id?: string
           created_at?: string
           duration_sec?: number | null
