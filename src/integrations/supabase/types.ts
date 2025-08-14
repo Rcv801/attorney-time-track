@@ -64,7 +64,9 @@ export type Database = {
           end_at: string | null
           id: string
           notes: string | null
+          paused_at: string | null
           start_at: string
+          total_paused_seconds: number | null
           user_id: string
         }
         Insert: {
@@ -75,7 +77,9 @@ export type Database = {
           end_at?: string | null
           id?: string
           notes?: string | null
+          paused_at?: string | null
           start_at: string
+          total_paused_seconds?: number | null
           user_id: string
         }
         Update: {
@@ -86,7 +90,9 @@ export type Database = {
           end_at?: string | null
           id?: string
           notes?: string | null
+          paused_at?: string | null
           start_at?: string
+          total_paused_seconds?: number | null
           user_id?: string
         }
         Relationships: [

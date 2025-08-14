@@ -29,7 +29,7 @@ export default function TimerPopout() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,notes,client_id,end_at")
+        .select("id,start_at,notes,client_id,end_at,paused_at,total_paused_seconds")
         .is("end_at", null)
         .maybeSingle();
       if (error) throw error; return data as any;
@@ -39,9 +39,19 @@ export default function TimerPopout() {
   useEffect(() => {
     if (!active?.start_at) { setElapsed(0); return; }
     const start = new Date(active.start_at).getTime();
-    const i = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    const totalPaused = active.total_paused_seconds || 0;
+    const i = setInterval(() => {
+      if (active.paused_at) {
+        // Timer is paused, don't update elapsed
+        const pausedTime = Math.floor((new Date(active.paused_at).getTime() - start) / 1000) - totalPaused;
+        setElapsed(pausedTime);
+      } else {
+        // Timer is running, update elapsed time minus paused duration
+        setElapsed(Math.floor((Date.now() - start) / 1000) - totalPaused);
+      }
+    }, 1000);
     return () => clearInterval(i);
-  }, [active?.start_at]);
+  }, [active?.start_at, active?.paused_at, active?.total_paused_seconds]);
 
   const startMut = useMutation({
     mutationFn: async () => {
@@ -56,10 +66,51 @@ export default function TimerPopout() {
     },
   });
 
+  const pauseMut = useMutation({
+    mutationFn: async () => {
+      if (!active?.id) return;
+      const { error } = await supabase.from("entries").update({ 
+        paused_at: new Date().toISOString(),
+        notes 
+      }).eq("id", active.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["active-entry"] });
+    },
+  });
+
+  const resumeMut = useMutation({
+    mutationFn: async () => {
+      if (!active?.id || !active?.paused_at) return;
+      const pausedDuration = Math.floor((Date.now() - new Date(active.paused_at).getTime()) / 1000);
+      const newTotalPaused = (active.total_paused_seconds || 0) + pausedDuration;
+      
+      const { error } = await supabase.from("entries").update({ 
+        paused_at: null,
+        total_paused_seconds: newTotalPaused,
+        notes 
+      }).eq("id", active.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["active-entry"] });
+    },
+  });
+
   const stopMut = useMutation({
     mutationFn: async () => {
       if (!active?.id) return;
-      const { error } = await supabase.from("entries").update({ end_at: new Date().toISOString(), notes }).eq("id", active.id);
+      let updateData: any = { end_at: new Date().toISOString(), notes };
+      
+      // If paused, calculate final paused time
+      if (active.paused_at) {
+        const pausedDuration = Math.floor((Date.now() - new Date(active.paused_at).getTime()) / 1000);
+        updateData.total_paused_seconds = (active.total_paused_seconds || 0) + pausedDuration;
+        updateData.paused_at = null;
+      }
+      
+      const { error } = await supabase.from("entries").update(updateData).eq("id", active.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -68,6 +119,7 @@ export default function TimerPopout() {
   });
 
   const running = Boolean(active);
+  const paused = Boolean(active?.paused_at);
   const activeRate = clients?.find(c => c.id === (active?.client_id ?? clientId))?.hourly_rate ?? 0;
   const activeAmount = running ? (elapsed/3600) * Number(activeRate ?? 0) : 0;
   const elapsedHMS = useMemo(() => {
@@ -95,7 +147,8 @@ export default function TimerPopout() {
         <div className="text-5xl font-bold tracking-tight">{elapsedHMS}</div>
         <div className="grid grid-cols-1 gap-4">
           <div>
-            <Select onValueChange={setClientId} value={clientId || active?.client_id || ""}>
+            <label className="text-sm font-medium mb-2 block">Client</label>
+            <Select onValueChange={setClientId} value={clientId || active?.client_id || ""} disabled={running}>
               <SelectTrigger>
                 <SelectValue placeholder="Select client" />
               </SelectTrigger>
@@ -122,13 +175,20 @@ export default function TimerPopout() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2">
             {running ? (
               <>
-                <Button onClick={() => stopMut.mutate()} disabled={stopMut.isPending}>Stop</Button>
+                <div className="flex gap-2">
+                  {paused ? (
+                    <Button onClick={() => resumeMut.mutate()} disabled={resumeMut.isPending} className="flex-1">Resume</Button>
+                  ) : (
+                    <Button onClick={() => pauseMut.mutate()} disabled={pauseMut.isPending} variant="secondary" className="flex-1">Pause</Button>
+                  )}
+                  <Button onClick={() => stopMut.mutate()} disabled={stopMut.isPending} className="flex-1">Stop</Button>
+                </div>
                 {active?.id && (
                   <EntryFormDialog
-                    trigger={<Button variant="outline" size="sm">Edit Active</Button>}
+                    trigger={<Button variant="outline" size="sm" className="w-full">Edit Active</Button>}
                     title="Edit active entry"
                     initial={{ id: active.id, client_id: active.client_id, start_at: active.start_at, end_at: active.end_at, notes: active.notes }}
                     clients={clients}
@@ -146,9 +206,9 @@ export default function TimerPopout() {
               </>
             ) : (
               <>
-                <Button onClick={() => startMut.mutate()} disabled={startMut.isPending || !clientId || !user}>Start</Button>
+                <Button onClick={() => startMut.mutate()} disabled={startMut.isPending || !clientId || !user} className="w-full">Start</Button>
                 <EntryFormDialog
-                  trigger={<Button variant="secondary" size="sm">Add Entry</Button>}
+                  trigger={<Button variant="secondary" size="sm" className="w-full">Add Entry</Button>}
                   title="Add entry"
                   clients={clients}
                   onSubmit={async (v) => {
