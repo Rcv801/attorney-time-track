@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SEO from "@/components/SEO";
 import EntryFormDialog from "@/components/EntryFormDialog";
+import InvoiceCreateDialog from "@/components/InvoiceCreateDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -20,24 +21,36 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, EyeOff, FileText } from "lucide-react";
 function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString(); }
 
 export default function Entries() {
   const [from, setFrom] = useState<string>(() => toISO(new Date(new Date().setDate(new Date().getDate()-7))).slice(0,10));
   const [to, setTo] = useState<string>(() => toISO(new Date()).slice(0,10));
+  const [showInvoiced, setShowInvoiced] = useState(false);
+  const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
-  const { data } = useQuery({
-    queryKey: ["entries", from, to],
+  const { data: allEntries } = useQuery({
+    queryKey: ["entries", from, to, showInvoiced],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("entries")
-        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,client:clients(name,hourly_rate)")
+        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,client:clients(name,hourly_rate)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
-      if (error) throw error; return data as any[];
+      
+      if (!showInvoiced) {
+        query = query.is("invoice_id", null);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error; 
+      return data as any[];
     }
   });
+
+  const data = allEntries || [];
 
   const { data: clients } = useQuery({
     queryKey: ["clients"],
@@ -103,11 +116,29 @@ export default function Entries() {
   const onToggleBilled = async (id: string, billed: boolean) => {
     const { error } = await supabase.from("entries").update({ billed }).eq("id", id);
     if (error) {
-      toast({ title: "Could not update billed status", description: error.message });
+      toast({ title: "Could not update time recorded status", description: error.message });
     } else {
       qc.invalidateQueries({ queryKey: ["entries"] });
-      toast({ title: billed ? "Marked as billed" : "Marked as unbilled" });
+      toast({ title: billed ? "Marked as time recorded" : "Marked as draft" });
     }
+  };
+
+  const toggleEntrySelection = (entryId: string) => {
+    const newSelection = new Set(selectedEntries);
+    if (newSelection.has(entryId)) {
+      newSelection.delete(entryId);
+    } else {
+      newSelection.add(entryId);
+    }
+    setSelectedEntries(newSelection);
+  };
+
+  const clearSelection = () => {
+    setSelectedEntries(new Set());
+  };
+
+  const getSelectedEntriesData = () => {
+    return data.filter(entry => selectedEntries.has(entry.id));
   };
 
   const onDelete = async (id: string) => {
@@ -150,19 +181,67 @@ export default function Entries() {
             clients={clients}
             onSubmit={onCreate}
           />
+          <Button
+            variant="outline"
+            onClick={() => setShowInvoiced(!showInvoiced)}
+            className="flex items-center gap-2"
+          >
+            {showInvoiced ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showInvoiced ? "Hide Invoiced" : "Show Invoiced"}
+          </Button>
           <div className="ml-auto flex items-center gap-4 text-sm text-muted-foreground">
             <span>Totals: {toHhMm(totals.seconds)} • {fmt.format(totals.amount)}</span>
             <span className="text-xs">Using time zone: {tz}</span>
           </div>
         </CardContent>
       </Card>
+      {selectedEntries.size > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {selectedEntries.size} entries selected
+              </span>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                  Clear Selection
+                </Button>
+                <InvoiceCreateDialog
+                  selectedEntries={getSelectedEntriesData()}
+                  onClose={clearSelection}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>Entries</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {data?.map((e)=> (
-            <div key={e.id} className="grid md:grid-cols-6 gap-2 border rounded p-2 text-sm">
+            <div 
+              key={e.id} 
+              className={`grid md:grid-cols-7 gap-2 border rounded p-2 text-sm ${
+                e.invoice_id ? 'bg-muted/50 opacity-75' : ''
+              }`}
+            >
+              {!e.invoice_id && (
+                <div className="flex items-center">
+                  <Checkbox
+                    checked={selectedEntries.has(e.id)}
+                    onCheckedChange={() => toggleEntrySelection(e.id)}
+                    aria-label="Select entry for invoicing"
+                  />
+                </div>
+              )}
+              {e.invoice_id && (
+                <div className="flex items-center">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
               <div className="font-medium">{e.client?.name}</div>
               <div>{new Date(e.start_at).toLocaleString()}</div>
               <div>{e.end_at ? new Date(e.end_at).toLocaleString() : "–"}</div>
@@ -172,12 +251,15 @@ export default function Entries() {
                   id={`billed-${e.id}`}
                   checked={!!e.billed}
                   onCheckedChange={(v) => onToggleBilled(e.id, Boolean(v))}
-                  aria-label="Mark entry as billed"
+                  aria-label="Mark entry as time recorded"
+                  disabled={!!e.invoice_id}
                 />
-                <label htmlFor={`billed-${e.id}`} className="text-xs">Billed</label>
+                <label htmlFor={`billed-${e.id}`} className="text-xs">
+                  {e.invoice_id ? "Invoiced" : "Time Recorded"}
+                </label>
               </div>
-              <div className="md:col-span-6">{e.notes}</div>
-              <div className="md:col-span-6 flex justify-end gap-2">
+              <div className="md:col-span-7">{e.notes}</div>
+              <div className="md:col-span-7 flex justify-end gap-2">
                 <EntryFormDialog
                   trigger={<Button variant="outline" size="sm">Edit</Button>}
                   title="Edit entry"

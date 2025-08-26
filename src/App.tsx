@@ -11,6 +11,7 @@ import RequireAuth from "./components/RequireAuth";
 import Dashboard from "./pages/app/Dashboard";
 import Clients from "./pages/app/Clients";
 import Entries from "./pages/app/Entries";
+import Invoices from "./pages/app/Invoices";
 import Reports from "./pages/app/Reports";
 import Settings from "./pages/app/Settings";
 import TimerPopout from "./pages/app/TimerPopout";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="clients" element={<Clients />} />
           <Route path="entries" element={<Entries />} />
+          <Route path="invoices" element={<Invoices />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
         </Route>
