@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import EntryFormDialog from "@/components/EntryFormDialog";
+import StopTimerDialog from "@/components/StopTimerDialog";
 
 function startOfLocalDayUtc() {
   const now = new Date();
@@ -22,8 +23,8 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [clientId, setClientId] = useState<string>("");
-  const [notes, setNotes] = useState("");
   const [elapsed, setElapsed] = useState<number>(0);
+  const [showStopDialog, setShowStopDialog] = useState(false);
 
   const { data: clients } = useQuery({
     queryKey: ["clients"],
@@ -79,11 +80,10 @@ export default function Dashboard() {
     mutationFn: async () => {
       if (!clientId) throw new Error("Select a client");
       if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("entries").insert({ client_id: clientId, start_at: new Date().toISOString(), notes, user_id: user.id });
+      const { error } = await supabase.from("entries").insert({ client_id: clientId, start_at: new Date().toISOString(), user_id: user.id });
       if (error) throw error;
     },
     onSuccess: () => {
-      setNotes("");
       qc.invalidateQueries({ queryKey: ["active-entry"] });
       qc.invalidateQueries({ queryKey: ["entries-today"] });
     },
@@ -94,8 +94,7 @@ export default function Dashboard() {
     mutationFn: async () => {
       if (!active?.id) return;
       const { error } = await supabase.from("entries").update({ 
-        paused_at: new Date().toISOString(),
-        notes 
+        paused_at: new Date().toISOString()
       }).eq("id", active.id);
       if (error) throw error;
     },
@@ -113,8 +112,7 @@ export default function Dashboard() {
       
       const { error } = await supabase.from("entries").update({ 
         paused_at: null,
-        total_paused_seconds: newTotalPaused,
-        notes 
+        total_paused_seconds: newTotalPaused
       }).eq("id", active.id);
       if (error) throw error;
     },
@@ -125,7 +123,7 @@ export default function Dashboard() {
   });
 
   const stopMut = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (notes: string) => {
       if (!active?.id) return;
       let updateData: any = { end_at: new Date().toISOString(), notes };
       
@@ -140,11 +138,20 @@ export default function Dashboard() {
       if (error) throw error;
     },
     onSuccess: () => {
+      setShowStopDialog(false);
       qc.invalidateQueries({ queryKey: ["active-entry"] });
       qc.invalidateQueries({ queryKey: ["entries-today"] });
     },
     onError: (e: any) => toast({ title: "Cannot stop", description: e.message }),
   });
+
+  const handleStopTimer = () => {
+    setShowStopDialog(true);
+  };
+
+  const handleConfirmStop = (notes: string) => {
+    stopMut.mutate(notes);
+  };
 
   const running = Boolean(active);
   const paused = Boolean(active?.paused_at);
@@ -218,7 +225,7 @@ export default function Dashboard() {
                 onSubmit={onCreate}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               <div className="md:col-span-1">
                 <label className="text-sm font-medium mb-2 block">Client</label>
                 <Select onValueChange={setClientId} value={clientId || active?.client_id || ""} disabled={running}>
@@ -234,20 +241,6 @@ export default function Dashboard() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <Textarea rows={8} placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">Expand</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit notes</DialogTitle>
-                    </DialogHeader>
-                    <Textarea rows={12} value={notes} onChange={(e) => setNotes(e.target.value)} />
-                  </DialogContent>
-                </Dialog>
-              </div>
               <div className="md:col-span-1 space-y-2">
                 {running ? (
                   <div className="space-y-2">
@@ -256,7 +249,7 @@ export default function Dashboard() {
                     ) : (
                       <Button onClick={() => pauseMut.mutate()} disabled={pauseMut.isPending} variant="secondary" className="w-full">Pause</Button>
                     )}
-                    <Button onClick={() => stopMut.mutate()} disabled={stopMut.isPending} className="w-full">Stop</Button>
+                    <Button onClick={handleStopTimer} disabled={stopMut.isPending} className="w-full">Stop</Button>
                   </div>
                 ) : (
                   <Button onClick={() => startMut.mutate()} disabled={startMut.isPending || !clientId || !user} className="w-full">Start</Button>
@@ -265,6 +258,13 @@ export default function Dashboard() {
             </div>
         </CardContent>
       </Card>
+
+      <StopTimerDialog
+        open={showStopDialog}
+        onOpenChange={setShowStopDialog}
+        onConfirm={handleConfirmStop}
+        isLoading={stopMut.isPending}
+      />
 
       <Card>
         <CardHeader>

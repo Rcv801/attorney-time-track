@@ -189,6 +189,10 @@ export default function Entries() {
             {showInvoiced ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             {showInvoiced ? "Hide Invoiced" : "Show Invoiced"}
           </Button>
+          <InvoiceCreateDialog
+            selectedEntries={[]}
+            onClose={() => {}}
+          />
           <div className="ml-auto flex items-center gap-4 text-sm text-muted-foreground">
             <span>Totals: {toHhMm(totals.seconds)} • {fmt.format(totals.amount)}</span>
             <span className="text-xs">Using time zone: {tz}</span>
@@ -231,12 +235,13 @@ export default function Entries() {
               {/* Header row with checkbox/icon, client, and status */}
               <div className="flex flex-wrap items-center gap-3">
                 {!e.invoice_id && (
-                  <div className="flex items-center shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Checkbox
                       checked={selectedEntries.has(e.id)}
                       onCheckedChange={() => toggleEntrySelection(e.id)}
                       aria-label="Select entry for invoicing"
                     />
+                    <span className="text-xs text-muted-foreground">Add to invoice</span>
                   </div>
                 )}
                 {e.invoice_id && (
