@@ -224,42 +224,66 @@ export default function Entries() {
           {data?.map((e)=> (
             <div 
               key={e.id} 
-              className={`grid md:grid-cols-7 gap-2 border rounded p-2 text-sm ${
+              className={`flex flex-col gap-3 border rounded p-4 text-sm ${
                 e.invoice_id ? 'bg-muted/50 opacity-75' : ''
               }`}
             >
-              {!e.invoice_id && (
-                <div className="flex items-center">
+              {/* Header row with checkbox/icon, client, and status */}
+              <div className="flex flex-wrap items-center gap-3">
+                {!e.invoice_id && (
+                  <div className="flex items-center shrink-0">
+                    <Checkbox
+                      checked={selectedEntries.has(e.id)}
+                      onCheckedChange={() => toggleEntrySelection(e.id)}
+                      aria-label="Select entry for invoicing"
+                    />
+                  </div>
+                )}
+                {e.invoice_id && (
+                  <div className="flex items-center shrink-0">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="font-medium min-w-0 flex-1">{e.client?.name}</div>
+                <div className="flex items-center gap-2 shrink-0">
                   <Checkbox
-                    checked={selectedEntries.has(e.id)}
-                    onCheckedChange={() => toggleEntrySelection(e.id)}
-                    aria-label="Select entry for invoicing"
+                    id={`billed-${e.id}`}
+                    checked={!!e.billed}
+                    onCheckedChange={(v) => onToggleBilled(e.id, Boolean(v))}
+                    aria-label="Mark entry as time recorded"
+                    disabled={!!e.invoice_id}
                   />
+                  <label htmlFor={`billed-${e.id}`} className="text-xs whitespace-nowrap">
+                    {e.invoice_id ? "Invoiced" : "Time Recorded"}
+                  </label>
                 </div>
-              )}
-              {e.invoice_id && (
-                <div className="flex items-center">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </div>
-              )}
-              <div className="font-medium">{e.client?.name}</div>
-              <div>{new Date(e.start_at).toLocaleString()}</div>
-              <div>{e.end_at ? new Date(e.end_at).toLocaleString() : "–"}</div>
-              <div>{e.duration_sec ? `${Math.floor(e.duration_sec/3600)}h ${Math.floor((e.duration_sec%3600)/60)}m` : "–"}</div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={`billed-${e.id}`}
-                  checked={!!e.billed}
-                  onCheckedChange={(v) => onToggleBilled(e.id, Boolean(v))}
-                  aria-label="Mark entry as time recorded"
-                  disabled={!!e.invoice_id}
-                />
-                <label htmlFor={`billed-${e.id}`} className="text-xs">
-                  {e.invoice_id ? "Invoiced" : "Time Recorded"}
-                </label>
               </div>
-              <div className="md:col-span-7">{e.notes}</div>
-              <div className="md:col-span-7 flex justify-end gap-2">
+
+              {/* Time details row */}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">Start:</span>
+                  <span className="whitespace-nowrap">{new Date(e.start_at).toLocaleString()}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">End:</span>
+                  <span className="whitespace-nowrap">{e.end_at ? new Date(e.end_at).toLocaleString() : "–"}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">Duration:</span>
+                  <span className="whitespace-nowrap">
+                    {e.duration_sec ? `${Math.floor(e.duration_sec/3600)}h ${Math.floor((e.duration_sec%3600)/60)}m` : "–"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {e.notes && (
+                <div className="text-sm break-words">{e.notes}</div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-2 border-t">
                 <EntryFormDialog
                   trigger={<Button variant="outline" size="sm">Edit</Button>}
                   title="Edit entry"
