@@ -57,6 +57,7 @@ export type Database = {
       }
       entries: {
         Row: {
+          archived: boolean
           billed: boolean
           client_id: string
           created_at: string
@@ -71,6 +72,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived?: boolean
           billed?: boolean
           client_id: string
           created_at?: string
@@ -85,6 +87,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived?: boolean
           billed?: boolean
           client_id?: string
           created_at?: string

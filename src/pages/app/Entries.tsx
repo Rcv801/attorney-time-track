@@ -28,20 +28,25 @@ export default function Entries() {
   const [from, setFrom] = useState<string>(() => toISO(new Date(new Date().setDate(new Date().getDate()-7))).slice(0,10));
   const [to, setTo] = useState<string>(() => toISO(new Date()).slice(0,10));
   const [showInvoiced, setShowInvoiced] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
   const { data: allEntries } = useQuery({
-    queryKey: ["entries", from, to, showInvoiced],
+    queryKey: ["entries", from, to, showInvoiced, showArchived],
     queryFn: async () => {
       let query = supabase
         .from("entries")
-        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,client:clients(name,hourly_rate)")
+        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,archived,client:clients(name,hourly_rate)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
       
       if (!showInvoiced) {
         query = query.is("invoice_id", null);
+      }
+      
+      if (!showArchived) {
+        query = query.eq("archived", false);
       }
       
       const { data, error } = await query;
@@ -141,6 +146,12 @@ export default function Entries() {
     return data.filter(entry => selectedEntries.has(entry.id));
   };
 
+  const addAllToInvoice = () => {
+    const selectableEntries = data.filter(entry => !entry.invoice_id && !entry.archived);
+    const newSelection = new Set(selectableEntries.map(entry => entry.id));
+    setSelectedEntries(newSelection);
+  };
+
   const onDelete = async (id: string) => {
     const { error } = await supabase.from("entries").delete().eq("id", id);
     if (error) {
@@ -189,6 +200,21 @@ export default function Entries() {
             {showInvoiced ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             {showInvoiced ? "Hide Invoiced" : "Show Invoiced"}
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowArchived(!showArchived)}
+            className="flex items-center gap-2"
+          >
+            {showArchived ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showArchived ? "Hide Archived" : "Show Archived"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={addAllToInvoice}
+            disabled={!data.some(entry => !entry.invoice_id && !entry.archived)}
+          >
+            Add All to Invoice
+          </Button>
           <InvoiceCreateDialog
             selectedEntries={[]}
             onClose={() => {}}
@@ -229,26 +255,26 @@ export default function Entries() {
             <div 
               key={e.id} 
               className={`flex flex-col gap-3 border rounded p-4 text-sm ${
-                e.invoice_id ? 'bg-muted/50 opacity-75' : ''
+                e.invoice_id || e.archived ? 'bg-muted/50 opacity-75' : ''
               }`}
             >
-              {/* Header row with checkbox/icon, client, and status */}
-              <div className="flex flex-wrap items-center gap-3">
-                {!e.invoice_id && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Checkbox
-                      checked={selectedEntries.has(e.id)}
-                      onCheckedChange={() => toggleEntrySelection(e.id)}
-                      aria-label="Select entry for invoicing"
-                    />
-                    <span className="text-xs text-muted-foreground">Add to invoice</span>
-                  </div>
-                )}
-                {e.invoice_id && (
-                  <div className="flex items-center shrink-0">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                )}
+               {/* Header row with checkbox/icon, client, and status */}
+               <div className="flex flex-wrap items-center gap-3">
+                 {!e.invoice_id && !e.archived && (
+                   <div className="flex items-center gap-2 shrink-0">
+                     <Checkbox
+                       checked={selectedEntries.has(e.id)}
+                       onCheckedChange={() => toggleEntrySelection(e.id)}
+                       aria-label="Select entry for invoicing"
+                     />
+                     <span className="text-xs text-muted-foreground">Add to invoice</span>
+                   </div>
+                 )}
+                 {(e.invoice_id || e.archived) && (
+                   <div className="flex items-center shrink-0">
+                     <FileText className="h-4 w-4 text-muted-foreground" />
+                   </div>
+                 )}
                 <div className="font-medium min-w-0 flex-1">{e.client?.name}</div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Checkbox
@@ -258,9 +284,9 @@ export default function Entries() {
                     aria-label="Mark entry as time recorded"
                     disabled={!!e.invoice_id}
                   />
-                  <label htmlFor={`billed-${e.id}`} className="text-xs whitespace-nowrap">
-                    {e.invoice_id ? "Invoiced" : "Time Recorded"}
-                  </label>
+                   <label htmlFor={`billed-${e.id}`} className="text-xs whitespace-nowrap">
+                     {e.invoice_id ? "Invoiced" : e.archived ? "Archived" : "Time Recorded"}
+                   </label>
                 </div>
               </div>
 
