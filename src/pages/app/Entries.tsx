@@ -21,18 +21,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, FileText } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileText } from "lucide-react";
 function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString(); }
 
 export default function Entries() {
   const [from, setFrom] = useState<string>(() => toISO(new Date(new Date().setDate(new Date().getDate()-7))).slice(0,10));
   const [to, setTo] = useState<string>(() => toISO(new Date()).slice(0,10));
-  const [showInvoiced, setShowInvoiced] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [entryFilter, setEntryFilter] = useState<'all' | 'draft' | 'billed' | 'invoiced' | 'archived'>('draft');
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
   const { data: allEntries } = useQuery({
-    queryKey: ["entries", from, to, showInvoiced, showArchived],
+    queryKey: ["entries", from, to, entryFilter],
     queryFn: async () => {
       let query = supabase
         .from("entries")
@@ -41,12 +41,23 @@ export default function Entries() {
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
       
-      if (!showInvoiced) {
-        query = query.is("invoice_id", null);
-      }
-      
-      if (!showArchived) {
-        query = query.eq("archived", false);
+      // Apply filter based on entryFilter state
+      switch (entryFilter) {
+        case 'draft':
+          query = query.eq("billed", false).is("invoice_id", null).eq("archived", false);
+          break;
+        case 'billed':
+          query = query.eq("billed", true).is("invoice_id", null).eq("archived", false);
+          break;
+        case 'invoiced':
+          query = query.not("invoice_id", "is", null);
+          break;
+        case 'archived':
+          query = query.eq("archived", true);
+          break;
+        case 'all':
+          // Show all entries, no additional filters
+          break;
       }
       
       const { data, error } = await query;
@@ -192,22 +203,21 @@ export default function Entries() {
             clients={clients}
             onSubmit={onCreate}
           />
-          <Button
-            variant="outline"
-            onClick={() => setShowInvoiced(!showInvoiced)}
-            className="flex items-center gap-2"
-          >
-            {showInvoiced ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showInvoiced ? "Hide Invoiced" : "Show Invoiced"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowArchived(!showArchived)}
-            className="flex items-center gap-2"
-          >
-            {showArchived ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showArchived ? "Hide Archived" : "Show Archived"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Show</span>
+            <Select value={entryFilter} onValueChange={(value: any) => setEntryFilter(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="billed">Billed</SelectItem>
+                <SelectItem value="invoiced">Invoiced</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             variant="outline"
             onClick={addAllToInvoice}
