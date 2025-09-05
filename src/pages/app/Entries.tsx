@@ -37,8 +37,8 @@ export default function Entries() {
       let query = supabase
         .from("entries")
         .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,archived,client:clients(name,hourly_rate)")
-        .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
-        .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
+        .gte("start_at", new Date(from + 'T00:00:00').toISOString())
+        .lte("start_at", new Date(to + 'T23:59:59').toISOString())
         .order("start_at", { ascending: false });
       
       if (!showArchived) {
