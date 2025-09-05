@@ -27,26 +27,26 @@ function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60
 export default function Entries() {
   const [from, setFrom] = useState<string>(() => toISO(new Date(new Date().setDate(new Date().getDate()-7))).slice(0,10));
   const [to, setTo] = useState<string>(() => toISO(new Date()).slice(0,10));
-  const [showInvoiced, setShowInvoiced] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
   const { data: allEntries } = useQuery({
-    queryKey: ["entries", from, to, showInvoiced],
+    queryKey: ["entries", from, to, showArchived],
     queryFn: async () => {
       let query = supabase
         .from("entries")
-        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,client:clients(name,hourly_rate)")
+        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,archived,client:clients(name,hourly_rate)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
       
-      if (!showInvoiced) {
-        query = query.is("invoice_id", null);
+      if (!showArchived) {
+        query = query.eq("archived", false);
       }
       
       const { data, error } = await query;
       if (error) throw error; 
-      return data as any[];
+      return data;
     }
   });
 
@@ -183,11 +183,11 @@ export default function Entries() {
           />
           <Button
             variant="outline"
-            onClick={() => setShowInvoiced(!showInvoiced)}
+            onClick={() => setShowArchived(!showArchived)}
             className="flex items-center gap-2"
           >
-            {showInvoiced ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showInvoiced ? "Hide Invoiced" : "Show Invoiced"}
+            {showArchived ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showArchived ? "Hide Archived" : "Show Archived"}
           </Button>
           <InvoiceCreateDialog
             selectedEntries={[]}
