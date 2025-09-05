@@ -29,6 +29,7 @@ export default function Entries() {
   const [to, setTo] = useState<string>(() => toISO(new Date()).slice(0,10));
   const [showArchived, setShowArchived] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
+  const [selectedArchiveEntries, setSelectedArchiveEntries] = useState<Set<string>>(new Set());
 
   const { data: allEntries } = useQuery({
     queryKey: ["entries", from, to, showArchived],
@@ -143,8 +144,34 @@ export default function Entries() {
     setSelectedEntries(newSelection);
   };
 
-  const clearSelection = () => {
-    setSelectedEntries(new Set());
+  const toggleArchiveSelection = (entryId: string) => {
+    const newSelection = new Set(selectedArchiveEntries);
+    if (newSelection.has(entryId)) {
+      newSelection.delete(entryId);
+    } else {
+      newSelection.add(entryId);
+    }
+    setSelectedArchiveEntries(newSelection);
+  };
+
+  const clearArchiveSelection = () => {
+    setSelectedArchiveEntries(new Set());
+  };
+
+  const onBulkArchive = async () => {
+    const entryIds = Array.from(selectedArchiveEntries);
+    const { error } = await supabase
+      .from("entries")
+      .update({ archived: true })
+      .in("id", entryIds);
+    
+    if (error) {
+      toast({ title: "Could not archive entries", description: error.message });
+    } else {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      toast({ title: `Archived ${entryIds.length} entries` });
+      clearArchiveSelection();
+    }
   };
 
   const getSelectedEntriesData = () => {
@@ -199,31 +226,69 @@ export default function Entries() {
             {showArchived ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             {showArchived ? "Hide Archived" : "Show Archived"}
           </Button>
-          <InvoiceCreateDialog
-            selectedEntries={[]}
-            onClose={() => {}}
-          />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                disabled={selectedArchiveEntries.size === 0}
+                className="flex items-center gap-2"
+              >
+                <Archive className="h-4 w-4" />
+                Archive Selected ({selectedArchiveEntries.size})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Archive Entries</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to archive {selectedArchiveEntries.size} selected entries? 
+                  Archived entries will be hidden from the default view but can still be accessed using the "Show Archived" filter.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={clearArchiveSelection}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onBulkArchive}>Archive Entries</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <div className="ml-auto flex items-center gap-4 text-sm text-muted-foreground">
             <span>Totals: {toHhMm(totals.seconds)} • {fmt.format(totals.amount)}</span>
             <span className="text-xs">Using time zone: {tz}</span>
           </div>
         </CardContent>
       </Card>
-      {selectedEntries.size > 0 && (
+      {selectedArchiveEntries.size > 0 && (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
-                {selectedEntries.size} entries selected
+                {selectedArchiveEntries.size} entries selected for archiving
               </span>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={clearSelection}>
+                <Button variant="outline" size="sm" onClick={clearArchiveSelection}>
                   Clear Selection
                 </Button>
-                <InvoiceCreateDialog
-                  selectedEntries={getSelectedEntriesData()}
-                  onClose={clearSelection}
-                />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="default" size="sm" className="flex items-center gap-2">
+                      <Archive className="h-4 w-4" />
+                      Archive Selected
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Archive Entries</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to archive {selectedArchiveEntries.size} selected entries? 
+                        Archived entries will be hidden from the default view but can still be accessed using the "Show Archived" filter.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={onBulkArchive}>Archive Entries</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </CardContent>
@@ -242,37 +307,47 @@ export default function Entries() {
                 e.invoice_id ? 'bg-muted/50 opacity-75' : ''
               }`}
             >
-              {/* Header row with checkbox/icon, client, and status */}
-              <div className="flex flex-wrap items-center gap-3">
-                {!e.invoice_id && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Checkbox
-                      checked={selectedEntries.has(e.id)}
-                      onCheckedChange={() => toggleEntrySelection(e.id)}
-                      aria-label="Select entry for invoicing"
-                    />
-                    <span className="text-xs text-muted-foreground">Add to invoice</span>
-                  </div>
-                )}
-                {e.invoice_id && (
-                  <div className="flex items-center shrink-0">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="font-medium min-w-0 flex-1">{e.client?.name}</div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Checkbox
-                    id={`billed-${e.id}`}
-                    checked={!!e.billed}
-                    onCheckedChange={(v) => onToggleBilled(e.id, Boolean(v))}
-                    aria-label="Mark entry as time recorded"
-                    disabled={!!e.invoice_id}
-                  />
-                  <label htmlFor={`billed-${e.id}`} className="text-xs whitespace-nowrap">
-                    {e.invoice_id ? "Invoiced" : "Time Recorded"}
-                  </label>
-                </div>
-              </div>
+               {/* Header row with checkbox/icon, client, and status */}
+               <div className="flex flex-wrap items-center gap-3">
+                 {!e.invoice_id && (
+                   <div className="flex items-center gap-2 shrink-0">
+                     <Checkbox
+                       checked={selectedEntries.has(e.id)}
+                       onCheckedChange={() => toggleEntrySelection(e.id)}
+                       aria-label="Select entry for invoicing"
+                     />
+                     <span className="text-xs text-muted-foreground">Add to invoice</span>
+                   </div>
+                 )}
+                 {e.invoice_id && (
+                   <div className="flex items-center shrink-0">
+                     <FileText className="h-4 w-4 text-muted-foreground" />
+                   </div>
+                 )}
+                 {!e.archived && !e.invoice_id && (
+                   <div className="flex items-center gap-2 shrink-0">
+                     <Checkbox
+                       checked={selectedArchiveEntries.has(e.id)}
+                       onCheckedChange={() => toggleArchiveSelection(e.id)}
+                       aria-label="Select entry for archiving"
+                     />
+                     <span className="text-xs text-muted-foreground">Archive</span>
+                   </div>
+                 )}
+                 <div className="font-medium min-w-0 flex-1">{e.client?.name}</div>
+                 <div className="flex items-center gap-2 shrink-0">
+                   <Checkbox
+                     id={`billed-${e.id}`}
+                     checked={!!e.billed}
+                     onCheckedChange={(v) => onToggleBilled(e.id, Boolean(v))}
+                     aria-label="Mark entry as time recorded"
+                     disabled={!!e.invoice_id}
+                   />
+                   <label htmlFor={`billed-${e.id}`} className="text-xs whitespace-nowrap">
+                     {e.invoice_id ? "Invoiced" : e.archived ? "Archived" : "Time Recorded"}
+                   </label>
+                 </div>
+               </div>
 
               {/* Time details row */}
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
@@ -297,42 +372,44 @@ export default function Entries() {
                 <div className="text-sm break-words">{e.notes}</div>
               )}
 
-              {/* Actions */}
-              <div className="flex justify-end gap-2 pt-2 border-t">
-                <EntryFormDialog
-                  trigger={<Button variant="outline" size="sm">Edit</Button>}
-                  title="Edit entry"
-                  initial={{ id: e.id, client_id: e.client_id, start_at: e.start_at, end_at: e.end_at, notes: e.notes }}
-                  clients={clients}
-                  onSubmit={onUpdate}
-                />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => onToggleArchived(e.id, !e.archived)}
-                  className="flex items-center gap-1"
-                >
-                  <Archive className="h-3 w-3" />
-                  {e.archived ? "Unarchive" : "Archive"}
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">Delete</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete entry?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. The entry will be permanently removed.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onDelete(e.id)}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+               {/* Actions */}
+               <div className="flex justify-end gap-2 pt-2 border-t">
+                 <EntryFormDialog
+                   trigger={<Button variant="outline" size="sm">Edit</Button>}
+                   title="Edit entry"
+                   initial={{ id: e.id, client_id: e.client_id, start_at: e.start_at, end_at: e.end_at, notes: e.notes }}
+                   clients={clients}
+                   onSubmit={onUpdate}
+                 />
+                 {e.archived && (
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     onClick={() => onToggleArchived(e.id, false)}
+                     className="flex items-center gap-1"
+                   >
+                     <Archive className="h-3 w-3" />
+                     Unarchive
+                   </Button>
+                 )}
+                 <AlertDialog>
+                   <AlertDialogTrigger asChild>
+                     <Button variant="destructive" size="sm">Delete</Button>
+                   </AlertDialogTrigger>
+                   <AlertDialogContent>
+                     <AlertDialogHeader>
+                       <AlertDialogTitle>Delete entry?</AlertDialogTitle>
+                       <AlertDialogDescription>
+                         This action cannot be undone. The entry will be permanently removed.
+                       </AlertDialogDescription>
+                     </AlertDialogHeader>
+                     <AlertDialogFooter>
+                       <AlertDialogCancel>Cancel</AlertDialogCancel>
+                       <AlertDialogAction onClick={() => onDelete(e.id)}>Delete</AlertDialogAction>
+                     </AlertDialogFooter>
+                   </AlertDialogContent>
+                 </AlertDialog>
+               </div>
             </div>
           ))}
         </CardContent>
