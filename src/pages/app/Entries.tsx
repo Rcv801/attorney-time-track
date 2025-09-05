@@ -233,7 +233,10 @@ export default function Entries() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setShowTimeRecordedOnly(!showTimeRecordedOnly)}
+            onClick={() => {
+              setShowTimeRecordedOnly(!showTimeRecordedOnly);
+              qc.invalidateQueries({ queryKey: ["entries"] });
+            }}
             className="flex items-center gap-2"
           >
             <CheckCircle className="h-4 w-4" />
