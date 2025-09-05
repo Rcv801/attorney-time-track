@@ -21,18 +21,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, FileText, Archive } from "lucide-react";
+import { Eye, EyeOff, FileText, Archive, CheckCircle } from "lucide-react";
 function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString(); }
 
 export default function Entries() {
   const [from, setFrom] = useState<string>(() => toISO(new Date(new Date().setDate(new Date().getDate()-7))).slice(0,10));
   const [to, setTo] = useState<string>(() => toISO(new Date()).slice(0,10));
   const [showArchived, setShowArchived] = useState(false);
+  const [showTimeRecordedOnly, setShowTimeRecordedOnly] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [selectedArchiveEntries, setSelectedArchiveEntries] = useState<Set<string>>(new Set());
 
   const { data: allEntries } = useQuery({
-    queryKey: ["entries", from, to, showArchived],
+    queryKey: ["entries", from, to, showArchived, showTimeRecordedOnly],
     queryFn: async () => {
       let query = supabase
         .from("entries")
@@ -43,6 +44,10 @@ export default function Entries() {
       
       if (!showArchived) {
         query = query.eq("archived", false);
+      }
+      
+      if (showTimeRecordedOnly) {
+        query = query.eq("billed", true);
       }
       
       const { data, error } = await query;
@@ -225,6 +230,14 @@ export default function Entries() {
           >
             {showArchived ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             {showArchived ? "Hide Archived" : "Show Archived"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowTimeRecordedOnly(!showTimeRecordedOnly)}
+            className="flex items-center gap-2"
+          >
+            <CheckCircle className="h-4 w-4" />
+            {showTimeRecordedOnly ? "Show All" : "Time Recorded Only"}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
