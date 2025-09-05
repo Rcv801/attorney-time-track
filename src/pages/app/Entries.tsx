@@ -21,46 +21,27 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { FileText, Filter } from "lucide-react";
+import { Eye, EyeOff, FileText } from "lucide-react";
 function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString(); }
 
 export default function Entries() {
   const [from, setFrom] = useState<string>(() => toISO(new Date(new Date().setDate(new Date().getDate()-7))).slice(0,10));
   const [to, setTo] = useState<string>(() => toISO(new Date()).slice(0,10));
-  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(['draft']));
+  const [showInvoiced, setShowInvoiced] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
   const { data: allEntries } = useQuery({
-    queryKey: ["entries", from, to, Array.from(activeFilters).sort().join(',')],
+    queryKey: ["entries", from, to, showInvoiced],
     queryFn: async () => {
       let query = supabase
         .from("entries")
-        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,archived,client:clients(name,hourly_rate)")
+        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,client:clients(name,hourly_rate)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
       
-      // Apply filters based on activeFilters
-      if (activeFilters.size > 0 && !activeFilters.has('all')) {
-        const conditions = [];
-        
-        if (activeFilters.has('draft')) {
-          conditions.push('(billed.eq.false.and.invoice_id.is.null.and.archived.eq.false)');
-        }
-        if (activeFilters.has('billed')) {
-          conditions.push('(billed.eq.true.and.invoice_id.is.null.and.archived.eq.false)');
-        }
-        if (activeFilters.has('invoiced')) {
-          conditions.push('(invoice_id.not.is.null)');
-        }
-        if (activeFilters.has('archived')) {
-          conditions.push('(archived.eq.true)');
-        }
-        
-        if (conditions.length > 0) {
-          query = query.or(conditions.join(','));
-        }
+      if (!showInvoiced) {
+        query = query.is("invoice_id", null);
       }
       
       const { data, error } = await query;
@@ -160,32 +141,6 @@ export default function Entries() {
     return data.filter(entry => selectedEntries.has(entry.id));
   };
 
-  const addAllToInvoice = () => {
-    const selectableEntries = data.filter(entry => !entry.invoice_id && !entry.archived);
-    const newSelection = new Set(selectableEntries.map(entry => entry.id));
-    setSelectedEntries(newSelection);
-  };
-
-  const toggleFilter = (filterType: string) => {
-    const newFilters = new Set(activeFilters);
-    if (newFilters.has(filterType)) {
-      newFilters.delete(filterType);
-    } else {
-      newFilters.add(filterType);
-    }
-    
-    // If 'all' is selected, clear other filters
-    if (filterType === 'all') {
-      setActiveFilters(new Set(['all']));
-    } else if (newFilters.has('all')) {
-      // If selecting a specific filter while 'all' is active, remove 'all'
-      newFilters.delete('all');
-      setActiveFilters(newFilters);
-    } else {
-      setActiveFilters(newFilters);
-    }
-  };
-
   const onDelete = async (id: string) => {
     const { error } = await supabase.from("entries").delete().eq("id", id);
     if (error) {
@@ -226,69 +181,13 @@ export default function Entries() {
             clients={clients}
             onSubmit={onCreate}
           />
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Filter</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  {activeFilters.size === 1 && activeFilters.has('all') ? 'All' : 
-                   activeFilters.size === 0 ? 'None' :
-                   `${activeFilters.size} selected`}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 bg-background border shadow-lg z-50">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="filter-all"
-                      checked={activeFilters.has('all')}
-                      onCheckedChange={() => toggleFilter('all')}
-                    />
-                    <label htmlFor="filter-all" className="text-sm">All</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="filter-draft"
-                      checked={activeFilters.has('draft')}
-                      onCheckedChange={() => toggleFilter('draft')}
-                    />
-                    <label htmlFor="filter-draft" className="text-sm">Draft</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="filter-billed"
-                      checked={activeFilters.has('billed')}
-                      onCheckedChange={() => toggleFilter('billed')}
-                    />
-                    <label htmlFor="filter-billed" className="text-sm">Billed</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="filter-invoiced"
-                      checked={activeFilters.has('invoiced')}
-                      onCheckedChange={() => toggleFilter('invoiced')}
-                    />
-                    <label htmlFor="filter-invoiced" className="text-sm">Invoiced</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="filter-archived"
-                      checked={activeFilters.has('archived')}
-                      onCheckedChange={() => toggleFilter('archived')}
-                    />
-                    <label htmlFor="filter-archived" className="text-sm">Archived</label>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
           <Button
             variant="outline"
-            onClick={addAllToInvoice}
-            disabled={!data.some(entry => !entry.invoice_id && !entry.archived)}
+            onClick={() => setShowInvoiced(!showInvoiced)}
+            className="flex items-center gap-2"
           >
-            Add All to Invoice
+            {showInvoiced ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showInvoiced ? "Hide Invoiced" : "Show Invoiced"}
           </Button>
           <InvoiceCreateDialog
             selectedEntries={[]}
@@ -330,26 +229,26 @@ export default function Entries() {
             <div 
               key={e.id} 
               className={`flex flex-col gap-3 border rounded p-4 text-sm ${
-                e.invoice_id || e.archived ? 'bg-muted/50 opacity-75' : ''
+                e.invoice_id ? 'bg-muted/50 opacity-75' : ''
               }`}
             >
-               {/* Header row with checkbox/icon, client, and status */}
-               <div className="flex flex-wrap items-center gap-3">
-                 {!e.invoice_id && !e.archived && (
-                   <div className="flex items-center gap-2 shrink-0">
-                     <Checkbox
-                       checked={selectedEntries.has(e.id)}
-                       onCheckedChange={() => toggleEntrySelection(e.id)}
-                       aria-label="Select entry for invoicing"
-                     />
-                     <span className="text-xs text-muted-foreground">Add to invoice</span>
-                   </div>
-                 )}
-                 {(e.invoice_id || e.archived) && (
-                   <div className="flex items-center shrink-0">
-                     <FileText className="h-4 w-4 text-muted-foreground" />
-                   </div>
-                 )}
+              {/* Header row with checkbox/icon, client, and status */}
+              <div className="flex flex-wrap items-center gap-3">
+                {!e.invoice_id && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Checkbox
+                      checked={selectedEntries.has(e.id)}
+                      onCheckedChange={() => toggleEntrySelection(e.id)}
+                      aria-label="Select entry for invoicing"
+                    />
+                    <span className="text-xs text-muted-foreground">Add to invoice</span>
+                  </div>
+                )}
+                {e.invoice_id && (
+                  <div className="flex items-center shrink-0">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
                 <div className="font-medium min-w-0 flex-1">{e.client?.name}</div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Checkbox
@@ -359,9 +258,9 @@ export default function Entries() {
                     aria-label="Mark entry as time recorded"
                     disabled={!!e.invoice_id}
                   />
-                   <label htmlFor={`billed-${e.id}`} className="text-xs whitespace-nowrap">
-                     {e.invoice_id ? "Invoiced" : e.archived ? "Archived" : "Time Recorded"}
-                   </label>
+                  <label htmlFor={`billed-${e.id}`} className="text-xs whitespace-nowrap">
+                    {e.invoice_id ? "Invoiced" : "Time Recorded"}
+                  </label>
                 </div>
               </div>
 

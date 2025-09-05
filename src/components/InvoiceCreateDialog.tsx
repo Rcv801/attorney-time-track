@@ -64,7 +64,7 @@ export default function InvoiceCreateDialog({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, shouldArchive: boolean = false) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || selectedEntries.length === 0) return;
     
@@ -105,16 +105,11 @@ export default function InvoiceCreateDialog({
 
       if (invoiceError) throw invoiceError;
 
-      // Update entries to link them to the invoice and optionally archive them
+      // Update entries to link them to the invoice
       const entryIds = selectedEntries.map(e => e.id);
-      const updateData: any = { invoice_id: invoiceData.id };
-      if (shouldArchive) {
-        updateData.archived = true;
-      }
-      
       const { error: updateError } = await supabase
         .from("entries")
-        .update(updateData)
+        .update({ invoice_id: invoiceData.id })
         .in("id", entryIds);
 
       if (updateError) throw updateError;
@@ -124,8 +119,8 @@ export default function InvoiceCreateDialog({
       qc.invalidateQueries({ queryKey: ["invoices"] });
       
       toast({ 
-        title: shouldArchive ? "Invoice created and entries archived" : "Invoice created", 
-        description: `${selectedEntries.length} entries have been invoiced for ${fmt.format(totals.amount)}${shouldArchive ? " and archived" : ""}`
+        title: "Invoice created", 
+        description: `${selectedEntries.length} entries have been invoiced for ${fmt.format(totals.amount)}`
       });
       
       setIsOpen(false);
@@ -158,7 +153,7 @@ export default function InvoiceCreateDialog({
           <DialogTitle>Create Invoice</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
             <div>
               <div className="text-sm font-medium">Client</div>
@@ -223,23 +218,11 @@ export default function InvoiceCreateDialog({
             >
               Cancel
             </Button>
-            <Button 
-              type="button" 
-              variant="secondary"
-              disabled={isLoading}
-              onClick={(e) => handleSubmit(e as any, false)}
-            >
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creating..." : "Create Invoice"}
             </Button>
-            <Button 
-              type="button"
-              disabled={isLoading}
-              onClick={(e) => handleSubmit(e as any, true)}
-            >
-              {isLoading ? "Creating..." : "Invoice and Archive"}
-            </Button>
           </DialogFooter>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
