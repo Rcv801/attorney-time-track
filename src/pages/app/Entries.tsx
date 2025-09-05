@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, FileText } from "lucide-react";
+import { Eye, EyeOff, FileText, Archive } from "lucide-react";
 function toISO(d: Date) { return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString(); }
 
 export default function Entries() {
@@ -35,7 +35,7 @@ export default function Entries() {
     queryFn: async () => {
       let query = supabase
         .from("entries")
-        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,client:clients(name,hourly_rate)")
+        .select("id,client_id,start_at,end_at,duration_sec,notes,billed,invoice_id,archived,client:clients(name,hourly_rate)")
         .gte("start_at", new Date(from + 'T00:00:00.000Z').toISOString())
         .lte("start_at", new Date(to + 'T23:59:59.999Z').toISOString())
         .order("start_at", { ascending: false });
@@ -46,7 +46,7 @@ export default function Entries() {
       
       const { data, error } = await query;
       if (error) throw error; 
-      return data;
+      return data as any[];
     }
   });
 
@@ -120,6 +120,16 @@ export default function Entries() {
     } else {
       qc.invalidateQueries({ queryKey: ["entries"] });
       toast({ title: billed ? "Marked as time recorded" : "Marked as draft" });
+    }
+  };
+
+  const onToggleArchived = async (id: string, archived: boolean) => {
+    const { error } = await supabase.from("entries").update({ archived }).eq("id", id);
+    if (error) {
+      toast({ title: "Could not update archive status", description: error.message });
+    } else {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      toast({ title: archived ? "Entry archived" : "Entry unarchived" });
     }
   };
 
@@ -296,6 +306,15 @@ export default function Entries() {
                   clients={clients}
                   onSubmit={onUpdate}
                 />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onToggleArchived(e.id, !e.archived)}
+                  className="flex items-center gap-1"
+                >
+                  <Archive className="h-3 w-3" />
+                  {e.archived ? "Unarchive" : "Archive"}
+                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm">Delete</Button>
