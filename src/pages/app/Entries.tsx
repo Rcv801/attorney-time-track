@@ -240,7 +240,7 @@ export default function Entries() {
             className="flex items-center gap-2"
           >
             <CheckCircle className="h-4 w-4" />
-            {showTimeRecordedOnly ? "Show All" : "Time Recorded Only"}
+            {showTimeRecordedOnly ? "Show All" : "Show Recorded Entries"}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
