@@ -28,12 +28,12 @@ export default function Entries() {
   const [from, setFrom] = useState<string>(() => toISO(new Date(new Date().setDate(new Date().getDate()-7))).slice(0,10));
   const [to, setTo] = useState<string>(() => toISO(new Date()).slice(0,10));
   const [showArchived, setShowArchived] = useState(false);
-  const [showTimeRecordedOnly, setShowTimeRecordedOnly] = useState(false);
+  const [recordedFilter, setRecordedFilter] = useState<'all' | 'recorded' | 'unrecorded'>('all');
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [selectedArchiveEntries, setSelectedArchiveEntries] = useState<Set<string>>(new Set());
 
   const { data: allEntries } = useQuery({
-    queryKey: ["entries", from, to, showArchived, showTimeRecordedOnly],
+    queryKey: ["entries", from, to, showArchived, recordedFilter],
     queryFn: async () => {
       let query = supabase
         .from("entries")
@@ -46,8 +46,10 @@ export default function Entries() {
         query = query.eq("archived", false);
       }
       
-      if (showTimeRecordedOnly) {
+      if (recordedFilter === 'recorded') {
         query = query.eq("billed", true);
+      } else if (recordedFilter === 'unrecorded') {
+        query = query.eq("billed", false);
       }
       
       const { data, error } = await query;
@@ -234,13 +236,14 @@ export default function Entries() {
           <Button
             variant="outline"
             onClick={() => {
-              setShowTimeRecordedOnly(!showTimeRecordedOnly);
+              const nextFilter = recordedFilter === 'all' ? 'recorded' : recordedFilter === 'recorded' ? 'unrecorded' : 'all';
+              setRecordedFilter(nextFilter);
               qc.invalidateQueries({ queryKey: ["entries"] });
             }}
             className="flex items-center gap-2"
           >
             <CheckCircle className="h-4 w-4" />
-            {showTimeRecordedOnly ? "Show All" : "Show Recorded Entries"}
+            {recordedFilter === 'all' ? "Show Recorded Entries" : recordedFilter === 'recorded' ? "Show Unrecorded Entries" : "Show All Entries"}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
