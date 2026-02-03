@@ -31,10 +31,42 @@ export default function Settings() {
   };
 
   const wipe = async () => {
-    if (confirm !== "DELETE") return;
-    await supabase.from("entries").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await supabase.from("clients").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    setConfirm("");
+    if (confirm !== "DELETE" || !user) return;
+    
+    try {
+      // Delete all entries for this user (respects RLS)
+      const { error: entriesError } = await supabase
+        .from("entries")
+        .delete()
+        .eq("user_id", user.id);
+      
+      if (entriesError) throw entriesError;
+      
+      // Delete all invoices for this user (this will cascade to invoice_id in entries)
+      const { error: invoicesError } = await supabase
+        .from("invoices")
+        .delete()
+        .eq("user_id", user.id);
+      
+      if (invoicesError) throw invoicesError;
+      
+      // Delete all clients for this user
+      const { error: clientsError } = await supabase
+        .from("clients")
+        .delete()
+        .eq("user_id", user.id);
+      
+      if (clientsError) throw clientsError;
+      
+      setConfirm("");
+      alert("All your data has been deleted successfully.");
+      
+      // Optionally refresh the page to clear any cached data
+      window.location.reload();
+    } catch (error: any) {
+      alert(`Error deleting data: ${error.message}`);
+      console.error("Delete error:", error);
+    }
   };
 
   return (

@@ -48,18 +48,28 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!active?.start_at) { setElapsed(0); return; }
-    const start = new Date(active.start_at).getTime();
+    
+    // Parse timestamps once to avoid repeated parsing
+    const startTime = new Date(active.start_at).getTime();
+    const pausedAtTime = active.paused_at ? new Date(active.paused_at).getTime() : null;
     const totalPaused = active.total_paused_seconds || 0;
+    
+    // Update elapsed time every second
+    // This approach prevents drift by calculating from Date.now() on each tick
+    // rather than incrementing a counter
     const i = setInterval(() => {
-      if (active.paused_at) {
-        // Timer is paused, don't update elapsed
-        const pausedTime = Math.floor((new Date(active.paused_at).getTime() - start) / 1000) - totalPaused;
-        setElapsed(pausedTime);
+      if (pausedAtTime) {
+        // Timer is paused: show time from start to pause point, minus total paused duration
+        const pausedElapsed = Math.floor((pausedAtTime - startTime) / 1000) - totalPaused;
+        setElapsed(pausedElapsed);
       } else {
-        // Timer is running, update elapsed time minus paused duration
-        setElapsed(Math.floor((Date.now() - start) / 1000) - totalPaused);
+        // Timer is running: calculate current elapsed time minus total paused duration
+        // Using Date.now() ensures accuracy and prevents drift over long periods
+        const currentElapsed = Math.floor((Date.now() - startTime) / 1000) - totalPaused;
+        setElapsed(currentElapsed);
       }
     }, 1000);
+    
     return () => clearInterval(i);
   }, [active?.start_at, active?.paused_at, active?.total_paused_seconds]);
 
@@ -156,6 +166,9 @@ export default function Dashboard() {
   const running = Boolean(active);
   const paused = Boolean(active?.paused_at);
   const activeRate = clients?.find(c => c.id === (active?.client_id ?? clientId))?.hourly_rate ?? 0;
+  
+  // Calculate billing amount based on elapsed time (which already excludes paused duration)
+  // This ensures paused timers show accurate billing amounts
   const activeAmount = running ? (elapsed/3600) * Number(activeRate ?? 0) : 0;
   const elapsedHMS = useMemo(() => {
     let s = 0;

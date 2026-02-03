@@ -28,6 +28,13 @@ export default function Clients() {
   const add = async () => {
     if (!name.trim() || !user) return;
     const hourly_rate = Number.parseFloat(rate || "0");
+    
+    // Validate hourly rate
+    if (isNaN(hourly_rate) || hourly_rate < 0 || hourly_rate > 10000) {
+      alert("Hourly rate must be a number between $0 and $10,000");
+      return;
+    }
+    
     await supabase.from("clients").insert({ name, user_id: user.id, color, hourly_rate, notes: notes || null });
     setName("");
     setRate("0");
@@ -43,8 +50,16 @@ export default function Clients() {
 
   const rename = async (id: string, currentName: string, currentRate: number) => {
     const v = prompt("New name?", currentName) ?? currentName;
-    const r = prompt("Hourly rate?", String(currentRate ?? 0)) ?? String(currentRate ?? 0);
-    await supabase.from("clients").update({ name: v, hourly_rate: Number.parseFloat(r || "0") }).eq("id", id);
+    const rateStr = prompt("Hourly rate? (Must be between $0 and $10,000)", String(currentRate ?? 0)) ?? String(currentRate ?? 0);
+    const newRate = Number.parseFloat(rateStr || "0");
+    
+    // Validate hourly rate
+    if (isNaN(newRate) || newRate < 0 || newRate > 10000) {
+      alert("Invalid hourly rate. Must be a number between $0 and $10,000.");
+      return;
+    }
+    
+    await supabase.from("clients").update({ name: v, hourly_rate: newRate }).eq("id", id);
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
 
@@ -78,8 +93,20 @@ export default function Clients() {
                   <Label htmlFor="client-rate">Hourly rate</Label>
                   <div className="relative">
                     <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input id="client-rate" type="number" inputMode="decimal" step="0.01" value={rate} onChange={(e)=>setRate(e.target.value)} className="pl-7" />
+                    <Input 
+                      id="client-rate" 
+                      type="number" 
+                      inputMode="decimal" 
+                      step="0.01" 
+                      min="0" 
+                      max="10000" 
+                      value={rate} 
+                      onChange={(e)=>setRate(e.target.value)} 
+                      className="pl-7" 
+                      required
+                    />
                   </div>
+                  <p className="text-xs text-muted-foreground">Must be between $0 and $10,000</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="client-notes">Notes</Label>
