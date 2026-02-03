@@ -394,7 +394,16 @@ export default function Entries() {
                {/* Actions */}
                <div className="flex justify-end gap-2 pt-2 border-t">
                  <EntryFormDialog
-                   trigger={<Button variant="outline" size="sm">Edit</Button>}
+                   trigger={
+                     <Button 
+                       variant="outline" 
+                       size="sm"
+                       disabled={!!e.invoice_id}
+                       title={e.invoice_id ? "Cannot edit invoiced entries" : "Edit entry"}
+                     >
+                       Edit
+                     </Button>
+                   }
                    title="Edit entry"
                    initial={{ id: e.id, client_id: e.client_id, start_at: e.start_at, end_at: e.end_at, notes: e.notes }}
                    clients={clients}
@@ -413,7 +422,14 @@ export default function Entries() {
                  )}
                  <AlertDialog>
                    <AlertDialogTrigger asChild>
-                     <Button variant="destructive" size="sm">Delete</Button>
+                     <Button 
+                       variant="destructive" 
+                       size="sm"
+                       disabled={!!e.invoice_id}
+                       title={e.invoice_id ? "Cannot delete invoiced entries" : "Delete entry"}
+                     >
+                       Delete
+                     </Button>
                    </AlertDialogTrigger>
                    <AlertDialogContent>
                      <AlertDialogHeader>
