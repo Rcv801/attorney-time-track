@@ -46,6 +46,7 @@ const Matters = () => {
 
   const createMatter = useMutation({
     mutationFn: async (vars: MatterFormValues) => {
+      if (!user) throw new Error("Not authenticated");
       const { error } = await supabase.from("matters").insert({
         ...vars,
         user_id: user.id,

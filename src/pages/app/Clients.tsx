@@ -43,6 +43,7 @@ const Clients = () => {
 
   const createClient = useMutation({
     mutationFn: async (vars: ClientFormValues) => {
+      if (!user) throw new Error("Not authenticated");
       const { error } = await supabase.from("clients").insert({
         ...vars,
         user_id: user.id,
