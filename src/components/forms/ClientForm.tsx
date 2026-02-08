@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Client name must be at least 2 characters."),
@@ -23,20 +24,35 @@ export type ClientFormValues = z.infer<typeof formSchema>;
 
 interface ClientFormProps {
   onSubmit: (data: ClientFormValues) => void;
-  defaultValues?: Partial<ClientFormValues>;
+  initialValues?: Partial<ClientFormValues>;
   isSubmitting?: boolean;
+  submitButtonText?: string;
 }
 
-export function ClientForm({ onSubmit, defaultValues, isSubmitting }: ClientFormProps) {
+export function ClientForm({ 
+  onSubmit, 
+  initialValues, 
+  isSubmitting,
+  submitButtonText = "Save Client" 
+}: ClientFormProps) {
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       hourly_rate: 0,
       notes: "",
-      ...defaultValues,
+      ...initialValues,
     },
   });
+
+  // When initialValues changes (e.g., when a different client is selected for editing),
+  // reset the form with the new values.
+  useEffect(() => {
+    if (initialValues) {
+      form.reset(initialValues);
+    }
+  }, [initialValues, form]);
+
 
   return (
     <Form {...form}>
@@ -81,7 +97,7 @@ export function ClientForm({ onSubmit, defaultValues, isSubmitting }: ClientForm
           )}
         />
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Client"}
+          {isSubmitting ? "Saving..." : submitButtonText}
         </Button>
       </form>
     </Form>

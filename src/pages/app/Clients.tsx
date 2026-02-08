@@ -26,7 +26,8 @@ const Clients = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editClient, setEditClient] = useState<Client | null>(null);
 
   const { data: clients, isLoading } = useQuery<Client[]>({
     queryKey: ["clients"],
@@ -53,10 +54,25 @@ const Clients = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["clients"] });
       toast({ title: "Client created" });
-      setDialogOpen(false);
+      setCreateDialogOpen(false);
     },
     onError: (e: Error) => {
       toast({ title: "Cannot create client", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const updateClient = useMutation({
+    mutationFn: async (vars: ClientFormValues & { id: string }) => {
+      const { error } = await supabase.from("clients").update(vars).eq("id", vars.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      toast({ title: "Client updated" });
+      setEditClient(null);
+    },
+    onError: (e: Error) => {
+      toast({ title: "Cannot update client", description: e.message, variant: "destructive" });
     },
   });
 
@@ -86,8 +102,8 @@ const Clients = () => {
           </p>
         </div>
         <FormDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
           trigger={
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -127,7 +143,7 @@ const Clients = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditClient(client)}>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
@@ -156,10 +172,26 @@ const Clients = () => {
           title="No clients yet"
           description="Create your first client to start tracking time and billing."
           buttonText="Create Client"
-          onButtonClick={() => setDialogOpen(true)}
+          onButtonClick={() => setCreateDialogOpen(true)}
           icon={<Users className="h-16 w-16" />}
         />
       )}
+
+      {/* Edit Client Dialog */}
+      <FormDialog
+        open={!!editClient}
+        onOpenChange={(open) => !open && setEditClient(null)}
+        title="Edit client"
+        description="Update the client's information below."
+      >
+        {editClient && (
+          <ClientForm
+            initialValues={editClient}
+            onSubmit={(data) => updateClient.mutate({ ...data, id: editClient.id })}
+            isSubmitting={updateClient.isPending}
+          />
+        )}
+      </FormDialog>
     </div>
   );
 };
