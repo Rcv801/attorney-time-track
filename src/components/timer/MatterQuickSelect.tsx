@@ -46,6 +46,9 @@ const MatterQuickSelect = () => {
     <div className="mt-2 flex flex-wrap gap-2">
       {matters.map((matter) => {
         const isActive = activeEntry?.matter_id === matter.id;
+        const displayName = matter.name === "General" && matter.client?.name
+          ? `${matter.client.name} (General)`
+          : matter.name;
         return (
           <Button
             key={matter.id}
@@ -62,7 +65,7 @@ const MatterQuickSelect = () => {
             className="gap-1.5"
           >
             {!isActive && <Play className="h-3 w-3" />}
-            {matter.name}
+            {displayName}
           </Button>
         );
       })}
