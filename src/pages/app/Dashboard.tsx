@@ -84,22 +84,22 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Quick Start — pinned matters */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Quick Start</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Pin your most-used matters here for one-click time tracking.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <MatterQuickSelect />
-        </CardContent>
-      </Card>
+      {/* Timer — front and center */}
+      <Timer />
 
-      {/* Timer + Today's entries */}
+      {/* Quick Start + Today's entries */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Timer />
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Quick Start</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Pin your most-used matters for one-click time tracking.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <MatterQuickSelect />
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Today's Entries</CardTitle>
