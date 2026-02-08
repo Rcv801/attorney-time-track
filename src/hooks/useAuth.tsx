@@ -1,45 +1,21 @@
-import { useEffect, useState, useCallback } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { createContext, useContext } from 'react';
 
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+// Mock user for development
+const mockUser = {
+  id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+  email: 'test@example.com',
+};
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => {
-      setSession(s ?? null);
-      setUser(s?.user ?? null);
-    });
+const AuthContext = createContext({ user: mockUser });
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-    });
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <AuthContext.Provider value={{ user: mockUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
-  }, []);
-
-  const signUp = useCallback(async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/app/dashboard`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: redirectUrl },
-    });
-    return { error };
-  }, []);
-
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-  }, []);
-
-  return { user, session, loading, signIn, signUp, signOut };
-}
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
