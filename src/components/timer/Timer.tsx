@@ -95,13 +95,7 @@ const Timer = () => {
           </div>
         </CardContent>
       </Card>
-      <QuickSwitchDialog
-        isOpen={quickSwitchState.show}
-        onCancel={actions.cancelQuickAction}
-        onSubmit={actions.submitQuickAction}
-        stoppedMatterName={quickSwitchState.stoppedMatterName}
-        isSwitching={!!quickSwitchState.nextMatterId}
-      />
+      <QuickSwitchDialog />
     </>
   );
 };

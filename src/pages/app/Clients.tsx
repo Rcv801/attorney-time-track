@@ -63,7 +63,8 @@ const Clients = () => {
 
   const updateClient = useMutation({
     mutationFn: async (vars: ClientFormValues & { id: string }) => {
-      const { error } = await supabase.from("clients").update(vars).eq("id", vars.id);
+      const { id, ...data } = vars;
+      const { error } = await supabase.from("clients").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
