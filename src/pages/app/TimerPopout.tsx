@@ -26,7 +26,7 @@ type Entry = Tables<"entries">;
 
 export default function TimerPopout() {
   const qc = useQueryClient();
-  const { user }_ = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const {
     activeEntry,
