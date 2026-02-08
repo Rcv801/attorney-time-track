@@ -29,7 +29,8 @@ const Matters = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editMatter, setEditMatter] = useState<Matter | null>(null);
   const [search, setSearch] = useState("");
 
   const { data: matters, isLoading } = useQuery<Matter[]>({
@@ -56,10 +57,26 @@ const Matters = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["matters"] });
       toast({ title: "Matter created" });
-      setDialogOpen(false);
+      setCreateDialogOpen(false);
     },
     onError: (e: Error) => {
       toast({ title: "Cannot create matter", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const updateMatter = useMutation({
+    mutationFn: async (vars: MatterFormValues & { id: string }) => {
+      const { id, ...data } = vars;
+      const { error } = await supabase.from("matters").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["matters"] });
+      toast({ title: "Matter updated" });
+      setEditMatter(null);
+    },
+    onError: (e: Error) => {
+      toast({ title: "Cannot update matter", description: e.message, variant: "destructive" });
     },
   });
 
@@ -110,8 +127,8 @@ const Matters = () => {
           </p>
         </div>
         <FormDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
           trigger={
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -161,7 +178,7 @@ const Matters = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditMatter(matter)}>
                               <Edit className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -208,10 +225,32 @@ const Matters = () => {
           title="No matters yet"
           description="Create your first matter to start tracking time."
           buttonText="Create Matter"
-          onButtonClick={() => setDialogOpen(true)}
+          onButtonClick={() => setCreateDialogOpen(true)}
           icon={<Archive className="h-16 w-16" />}
         />
       )}
+
+      {/* Edit Matter Dialog */}
+      <FormDialog
+        open={!!editMatter}
+        onOpenChange={(open) => !open && setEditMatter(null)}
+        title="Edit matter"
+        description="Update the matter details below."
+      >
+        {editMatter && (
+          <MatterForm
+            defaultValues={{
+              name: editMatter.name,
+              matter_number: editMatter.matter_number || "",
+              hourly_rate: editMatter.hourly_rate,
+              client_id: editMatter.client_id,
+              description: editMatter.description || "",
+            }}
+            onSubmit={(data) => updateMatter.mutate({ ...data, id: editMatter.id })}
+            isSubmitting={updateMatter.isPending}
+          />
+        )}
+      </FormDialog>
     </div>
   );
 };
