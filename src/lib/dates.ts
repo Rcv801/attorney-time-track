@@ -1,5 +1,5 @@
 import { startOfDay, endOfDay, parseISO } from 'date-fns';
-import { utcToZonedTime, fromZonedTime } from 'date-fns-tz';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 
 /**
  * Returns the user's time zone.
@@ -28,7 +28,7 @@ export function localToUtc(date: Date | string | number): Date {
 export function utcToLocal(utcDate: Date | string | number): Date {
   const timeZone = getUserTimeZone();
   const dateObj = typeof utcDate === 'string' || typeof utcDate === 'number' ? new Date(utcDate) : utcDate;
-  return utcToZonedTime(dateObj, timeZone);
+  return toZonedTime(dateObj, timeZone);
 }
 
 /**

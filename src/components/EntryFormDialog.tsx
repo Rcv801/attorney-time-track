@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import MatterSelector from "./MatterSelector";
 import { format } from "date-fns";
-import { utcToZonedTime } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 import { localToUtc, getUserTimeZone } from "@/lib/dates";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -44,7 +44,7 @@ interface EntryFormDialogProps {
 
 const toLocalInput = (dateStr: string, formatStr: string) => {
     const tz = getUserTimeZone();
-    const localDate = utcToZonedTime(new Date(dateStr), tz);
+    const localDate = toZonedTime(new Date(dateStr), tz);
     return format(localDate, formatStr);
 };
 
