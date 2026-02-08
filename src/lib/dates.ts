@@ -1,5 +1,5 @@
 import { startOfDay, endOfDay, parseISO } from 'date-fns';
-import { utcToZonedTime, zonedToUtc } from 'date-fns-tz';
+import { utcToZonedTime, fromZonedTime } from 'date-fns-tz';
 
 /**
  * Returns the user's time zone.
@@ -17,7 +17,7 @@ export function getUserTimeZone(): string {
 export function localToUtc(date: Date | string | number): Date {
   const timeZone = getUserTimeZone();
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
-  return zonedToUtc(dateObj, timeZone);
+  return fromZonedTime(dateObj, timeZone);
 }
 
 /**
@@ -43,7 +43,7 @@ export function startOfLocalDayUtc(date: Date = new Date()): Date {
     // Get the start of the day in the local time zone
     const localStartOfDay = startOfDay(date);
     // Convert that local start of day to its UTC equivalent
-    return zonedToUtc(localStartOfDay, timeZone);
+    return fromZonedTime(localStartOfDay, timeZone);
 }
 
 /**
@@ -55,7 +55,7 @@ export function startOfLocalDayUtc(date: Date = new Date()): Date {
 export function endOfLocalDayUtc(date: Date = new Date()): Date {
     const timeZone = getUserTimeZone();
     const localEndOfDay = endOfDay(date);
-    return zonedToUtc(localEndOfDay, timeZone);
+    return fromZonedTime(localEndOfDay, timeZone);
 }
 
 /**
