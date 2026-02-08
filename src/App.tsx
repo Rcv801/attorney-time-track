@@ -2,8 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import Dashboard from './pages/app/Dashboard'
 import Entries from './pages/app/Entries'
-import Matters from './pages/app/Matters'
-import Clients from './pages/app/Clients'
+import ClientsAndMatters from './pages/app/ClientsAndMatters'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import RequireAuth from './components/RequireAuth'
@@ -23,9 +22,8 @@ function App() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="matters" element={<Matters />} />
           <Route path="entries" element={<Entries />} />
-          <Route path="clients" element={<Clients />} />
+          <Route path="clients-matters" element={<ClientsAndMatters />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

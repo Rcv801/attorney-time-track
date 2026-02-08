@@ -1,8 +1,9 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import FormDialog from "@/components/shared/FormDialog";
-import { ClientForm, type ClientFormValues } from "@/components/forms/ClientForm";
+import { ClientForm, type ClientFormValues, type ClientEditFormValues } from "@/components/forms/ClientForm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +23,7 @@ import { getEffectiveRate } from "@/lib/billing";
 type Client = Tables<"clients">;
 type Matter = Tables<"matters">;
 
-const Clients = () => {
+const ClientsAndMatters = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -85,16 +86,45 @@ const Clients = () => {
   const createClient = useMutation({
     mutationFn: async (vars: ClientFormValues) => {
       if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("clients").insert({ ...vars, user_id: user.id });
-      if (error) throw error;
+      
+      const { first_matter_name, ...clientData } = vars;
+
+      // 1. Create the client
+      const { data: newClient, error: clientError } = await supabase
+        .from("clients")
+        .insert({ ...clientData, user_id: user.id })
+        .select()
+        .single();
+      
+      if (clientError) throw clientError;
+      if (!newClient) throw new Error("Failed to create client.");
+
+      // 2. Create the first matter
+      const { error: matterError } = await supabase.from("matters").insert({
+        name: first_matter_name,
+        client_id: newClient.id,
+        user_id: user.id,
+        status: 'active',
+      });
+
+      if (matterError) {
+        // Attempt to roll back client creation if matter fails
+        await supabase.from("clients").delete().eq("id", newClient.id);
+        throw matterError;
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); toast({ title: "Client created" }); setCreateDialogOpen(false); },
-    onError: (e: Error) => { toast({ title: "Cannot create client", description: e.message, variant: "destructive" }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["clients"] }); 
+      qc.invalidateQueries({ queryKey: ["matters-for-clients"] });
+      toast({ title: "Client and first matter created" }); 
+      setCreateDialogOpen(false); 
+    },
+    onError: (e: Error) => { toast({ title: "Operation failed", description: e.message, variant: "destructive" }); },
   });
 
   const updateClient = useMutation({
-    mutationFn: async (vars: ClientFormValues & { id: string }) => {
-      const { id, ...data } = vars;
+    mutationFn: async (vars: ClientEditFormValues & { id: string }) => {
+      const { id, first_matter_name: _unused, ...data } = vars as ClientFormValues & { id: string };
       const { error } = await supabase.from("clients").update(data).eq("id", id);
       if (error) throw error;
     },
@@ -158,7 +188,7 @@ const Clients = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Clients</h1>
+          <h1 className="text-3xl font-bold">Clients & Matters</h1>
           <p className="text-muted-foreground mt-1">
             {clients?.length ?? 0} active client{clients?.length !== 1 ? "s" : ""}
           </p>
@@ -172,9 +202,13 @@ const Clients = () => {
             </Button>
           }
           title="Create a new client"
-          description="Enter the client's information below."
+          description="Enter the client's information and their first matter below."
         >
-          <ClientForm onSubmit={(data) => createClient.mutate(data)} isSubmitting={createClient.isPending} />
+          <ClientForm
+            mode="create"
+            onSubmit={(data) => createClient.mutate(data as ClientFormValues)}
+            isSubmitting={createClient.isPending}
+          />
         </FormDialog>
       </div>
 
@@ -330,6 +364,7 @@ const Clients = () => {
       >
         {editClient && (
           <ClientForm
+            mode="edit"
             initialValues={editClient}
             onSubmit={(data) => updateClient.mutate({ ...data, id: editClient.id })}
             isSubmitting={updateClient.isPending}
@@ -340,5 +375,4 @@ const Clients = () => {
   );
 };
 
-import React from "react";
-export default Clients;
+export default ClientsAndMatters;

@@ -16,8 +16,7 @@ interface SidebarProps {
 
 const navItems = [
   { to: '/', icon: Home, label: 'Dashboard' },
-  { to: '/clients', icon: Users, label: 'Clients' },
-  { to: '/matters', icon: Archive, label: 'Matters' },
+  { to: '/clients-matters', icon: Users, label: 'Clients & Matters' },
   { to: '/entries', icon: File, label: 'Entries' },
 ];
 
