@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import AppLayout from "./layouts/AppLayout";
 import RequireAuth from "./components/RequireAuth";
 import Dashboard from "./pages/app/Dashboard";
+import Matters from "./pages/app/Matters";
 import Clients from "./pages/app/Clients";
 import Entries from "./pages/app/Entries";
 import Invoices from "./pages/app/Invoices";
@@ -29,6 +30,7 @@ const App = () => (
         <Route path="/app" element={<RequireAuth><AppLayout /></RequireAuth>}>
           <Route index element={<Navigate to="/app/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="matters" element={<Matters />} />
           <Route path="clients" element={<Clients />} />
           <Route path="entries" element={<Entries />} />
           <Route path="invoices" element={<Invoices />} />

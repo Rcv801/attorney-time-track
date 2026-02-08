@@ -1,231 +1,301 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import MatterSelector from "@/components/MatterSelector";
+import QuickNoteInput from "@/components/QuickNoteInput";
 import EntryFormDialog from "@/components/EntryFormDialog";
+import { useTimer } from "@/hooks/useTimer";
+import {
+  calculateBillingAmount,
+  formatDuration,
+  roundToSixMinutes,
+  formatBillableHours,
+} from "@/lib/billing";
+import { startOfLocalDayUtc } from "@/lib/dates";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Matter = Tables<"matters"> & { client: Tables<"clients"> };
+type Entry = Tables<"entries">;
 
 export default function TimerPopout() {
   const qc = useQueryClient();
-  const { user } = useAuth();
-  const [clientId, setClientId] = useState<string>("");
-  const [notes, setNotes] = useState("");
-  const [elapsed, setElapsed] = useState<number>(0);
+  const { user }_ = useAuth();
+  const { toast } = useToast();
+  const {
+    activeEntry,
+    elapsed,
+    isRunning,
+    isPaused,
+    isLoading,
+    quickSwitchState,
+    actions,
+  } = useTimer();
+  const [notes, setNotes] = useState(activeEntry?.notes ?? "");
 
-  const { data: clients } = useQuery({
-    queryKey: ["clients"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id,name,color,hourly_rate").order("name");
-      if (error) throw error; return data as any[];
-    },
-  });
-
-  const { data: active } = useQuery({
-    queryKey: ["active-entry"],
+  // Fetch matters
+  const { data: matters } = useQuery({
+    queryKey: ["matters"],
     queryFn: async () => {
       const { data, error } = await supabase
+        .from("matters")
+        .select("*, client:clients(*)")
+        .eq("status", "active")
+        .order("name");
+      if (error) throw error;
+      return data as Matter[];
+    },
+  });
+
+  // Fetch today's entries
+  const { data: todays } = useQuery({
+    queryKey: ["entries-today"],
+    queryFn: async () => {
+      const from = startOfLocalDayUtc(new Date()).toISOString();
+      const { data, error } = await supabase
         .from("entries")
-        .select("id,start_at,notes,client_id,end_at,paused_at,total_paused_seconds")
-        .is("end_at", null)
-        .maybeSingle();
-      if (error) throw error; return data as any;
-    },
-  });
-
-  useEffect(() => {
-    if (!active?.start_at) { setElapsed(0); return; }
-    const start = new Date(active.start_at).getTime();
-    const totalPaused = active.total_paused_seconds || 0;
-    const i = setInterval(() => {
-      if (active.paused_at) {
-        // Timer is paused, don't update elapsed
-        const pausedTime = Math.floor((new Date(active.paused_at).getTime() - start) / 1000) - totalPaused;
-        setElapsed(pausedTime);
-      } else {
-        // Timer is running, update elapsed time minus paused duration
-        setElapsed(Math.floor((Date.now() - start) / 1000) - totalPaused);
-      }
-    }, 1000);
-    return () => clearInterval(i);
-  }, [active?.start_at, active?.paused_at, active?.total_paused_seconds]);
-
-  const startMut = useMutation({
-    mutationFn: async () => {
-      if (!clientId) throw new Error("Select a client");
-      if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("entries").insert({ client_id: clientId, start_at: new Date().toISOString(), notes, user_id: user.id });
+        .select("*, matter:matters(*, client:clients(*))")
+        .gte("start_at", from)
+        .order("start_at", { ascending: false });
       if (error) throw error;
-    },
-    onSuccess: () => {
-      setNotes("");
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
+      return data as (Entry & { matter: Matter })[];
     },
   });
 
-  const pauseMut = useMutation({
-    mutationFn: async () => {
-      if (!active?.id) return;
-      const { error } = await supabase.from("entries").update({ 
-        paused_at: new Date().toISOString(),
-        notes 
-      }).eq("id", active.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-    },
-  });
-
-  const resumeMut = useMutation({
-    mutationFn: async () => {
-      if (!active?.id || !active?.paused_at) return;
-      const pausedDuration = Math.floor((Date.now() - new Date(active.paused_at).getTime()) / 1000);
-      const newTotalPaused = (active.total_paused_seconds || 0) + pausedDuration;
-      
-      const { error } = await supabase.from("entries").update({ 
-        paused_at: null,
-        total_paused_seconds: newTotalPaused,
-        notes 
-      }).eq("id", active.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-    },
-  });
-
-  const stopMut = useMutation({
-    mutationFn: async () => {
-      if (!active?.id) return;
-      let updateData: any = { end_at: new Date().toISOString(), notes };
-      
-      // If paused, calculate final paused time
-      if (active.paused_at) {
-        const pausedDuration = Math.floor((Date.now() - new Date(active.paused_at).getTime()) / 1000);
-        updateData.total_paused_seconds = (active.total_paused_seconds || 0) + pausedDuration;
-        updateData.paused_at = null;
-      }
-      
-      const { error } = await supabase.from("entries").update(updateData).eq("id", active.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-    },
-  });
-
-  const running = Boolean(active);
-  const paused = Boolean(active?.paused_at);
-  const activeRate = clients?.find(c => c.id === (active?.client_id ?? clientId))?.hourly_rate ?? 0;
-  const activeAmount = running ? (elapsed/3600) * Number(activeRate ?? 0) : 0;
-  const elapsedHMS = useMemo(() => {
-    let s = 0;
-    if (running && active?.start_at) {
-      s = elapsed;
-    } else if (active?.start_at && active?.end_at) {
-      s = Math.floor((new Date(active.end_at).getTime() - new Date(active.start_at).getTime()) / 1000);
+  const handleMatterSelect = (selectedMatterId: string) => {
+    if (!selectedMatterId) return;
+    const matter = matters?.find((m) => m.id === selectedMatterId);
+    if (matter) {
+      actions.quickSwitch({ id: matter.id, client_id: matter.client_id, name: matter.name });
     }
-    const hh = String(Math.floor(s / 3600)).padStart(2, "0");
-    const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-    const ss = String(s % 60).padStart(2, "0");
-    return `${hh}:${mm}:${ss}`;
-  }, [elapsed, running, active]);
-  const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' });
+  };
+
+  const handleQuickNoteSubmit = (notes: string) => {
+    actions.submitQuickAction(notes);
+  };
+  
+  const handleQuickNoteSkip = () => {
+    actions.submitQuickAction(""); // Submit with empty notes
+  };
+
+  const activeMatter = activeEntry?.matter;
+  const activeRate =
+    activeMatter?.hourly_rate ?? activeMatter?.client?.hourly_rate ?? 0;
+  const billableHours = roundToSixMinutes(elapsed);
+  const activeAmount = calculateBillingAmount(elapsed, activeRate);
+
+  const elapsedHMS = formatDuration(elapsed);
+  const fmt = useMemo(() => new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "USD",
+  }), []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <SEO title="Timer Popout – Time App" description="Compact popout timer with client, notes, and start/stop controls." canonical={window.location.href} />
+      <SEO
+        title="Timer Popout – Time App"
+        description="Compact popout timer with matter, notes, and start/stop controls."
+      />
       <header className="flex items-center justify-between px-4 py-2 border-b">
         <h1 className="text-base font-semibold">Timer Popout</h1>
-        <div className="text-xs text-muted-foreground">{running ? fmt.format(activeAmount || 0) : ''}</div>
+        <div className="text-xs text-muted-foreground">
+          {activeEntry ? fmt.format(activeAmount) : ""}
+        </div>
       </header>
       <main className="p-4 space-y-4">
-        <div className="text-5xl font-bold tracking-tight">{elapsedHMS}</div>
-        <div className="grid grid-cols-1 gap-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Client</label>
-            <Select onValueChange={setClientId} value={clientId || active?.client_id || ""} disabled={running}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <span className="inline-flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />{c.name}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Timer Display */}
+        <div className="text-center space-y-1">
+          <div className="text-5xl font-bold tracking-tight">{elapsedHMS}</div>
+          {activeEntry && (
+            <div className="text-sm text-muted-foreground">
+              {formatBillableHours(billableHours)} • {fmt.format(activeAmount)}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Note Input */}
+        {quickSwitchState.show && (
+          <div className="bg-muted rounded-lg p-3">
+            <QuickNoteInput
+              matterName={quickSwitchState.stoppedMatterName}
+              onSubmit={handleQuickNoteSubmit}
+              onSkip={handleQuickNoteSkip}
+              isLoading={isLoading}
+            />
           </div>
-          <div className="flex flex-col gap-2">
-            <Textarea rows={6} placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">Expand</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Edit notes</DialogTitle>
-                </DialogHeader>
-                <Textarea rows={12} value={notes} onChange={(e) => setNotes(e.target.value)} />
-              </DialogContent>
-            </Dialog>
-          </div>
-          <div className="flex flex-col gap-2">
-            {running ? (
-              <>
-                <div className="flex gap-2">
-                  {paused ? (
-                    <Button onClick={() => resumeMut.mutate()} disabled={resumeMut.isPending} className="flex-1">Resume</Button>
-                  ) : (
-                    <Button onClick={() => pauseMut.mutate()} disabled={pauseMut.isPending} variant="secondary" className="flex-1">Pause</Button>
-                  )}
-                  <Button onClick={() => stopMut.mutate()} disabled={stopMut.isPending} className="flex-1">Stop</Button>
-                </div>
-                {active?.id && (
-                  <EntryFormDialog
-                    trigger={<Button variant="outline" size="sm" className="w-full">Edit Active</Button>}
-                    title="Edit active entry"
-                    initial={{ id: active.id, client_id: active.client_id, start_at: active.start_at, end_at: active.end_at, notes: active.notes }}
-                    clients={clients}
-                    onSubmit={async (v) => {
-                      await supabase.from("entries").update({
+        )}
+
+        {/* Matter Selection */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Matter</label>
+          <MatterSelector
+            matters={matters}
+            entries={todays}
+            value={activeEntry?.matter_id ?? ""}
+            onChange={handleMatterSelect}
+            disabled={quickSwitchState.show || isLoading}
+          />
+          {activeMatter && (
+            <div className="flex items-center gap-2 text-xs">
+              <Badge variant="outline">{activeMatter.client?.name}</Badge>
+              {activeRate > 0 ? (
+                <span className="text-muted-foreground">@${activeRate}/hr</span>
+              ) : (
+                <Badge variant="destructive" className="text-xs">No rate set</Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Notes */}
+        <div className="flex flex-col gap-2">
+          <Textarea
+            rows={4}
+            placeholder="Notes (optional)"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                Expand Notes
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit notes</DialogTitle>
+              </DialogHeader>
+              <Textarea
+                rows={12}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-col gap-2">
+          {activeEntry ? (
+            <>
+              <div className="flex gap-2">
+                {isPaused ? (
+                  <Button
+                    onClick={actions.resume}
+                    disabled={isLoading}
+                    className="flex-1"
+                  >
+                    Resume
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={actions.pause}
+                    disabled={isLoading}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    Pause
+                  </Button>
+                )}
+                <Button
+                  onClick={actions.stop}
+                  disabled={quickSwitchState.show}
+                  className="flex-1"
+                >
+                  Stop
+                </Button>
+              </div>
+              {activeEntry?.id && (
+                <EntryFormDialog
+                  trigger={
+                    <Button variant="outline" size="sm" className="w-full">
+                      Edit Active
+                    </Button>
+                  }
+                  title="Edit active entry"
+                  initial={{
+                    id: activeEntry.id,
+                    matter_id: activeEntry.matter_id ?? "",
+                    client_id: activeEntry.client_id,
+                    start_at: activeEntry.start_at,
+                    end_at: activeEntry.end_at,
+                    notes: activeEntry.notes,
+                  }}
+                  matters={matters}
+                  entries={todays}
+                  onSubmit={async (v) => {
+                    const { error } = await supabase
+                      .from("entries")
+                      .update({
+                        matter_id: v.matter_id,
                         client_id: v.client_id,
                         start_at: v.start_at,
                         end_at: v.end_at ?? null,
                         notes: v.notes ?? null,
-                      }).eq("id", v.id!);
+                      })
+                      .eq("id", v.id!);
+                    if (error) {
+                      toast({ title: "Error updating entry", description: error.message, variant: "destructive" });
+                    } else {
                       qc.invalidateQueries({ queryKey: ["active-entry"] });
-                    }}
-                  />
-                )}
-              </>
-            ) : (
-              <>
-                <Button onClick={() => startMut.mutate()} disabled={startMut.isPending || !clientId || !user} className="w-full">Start</Button>
-                <EntryFormDialog
-                  trigger={<Button variant="secondary" size="sm" className="w-full">Add Entry</Button>}
-                  title="Add entry"
-                  clients={clients}
-                  onSubmit={async (v) => {
-                    if (!user) return;
-                    await supabase.from("entries").insert({
-                      user_id: user.id,
-                      client_id: v.client_id,
-                      start_at: v.start_at,
-                      end_at: v.end_at ?? null,
-                      notes: v.notes ?? null,
-                    });
-                    qc.invalidateQueries({ queryKey: ["active-entry"] });
+                      toast({ title: "Entry updated" });
+                    }
                   }}
                 />
-              </>
-            )}
-          </div>
+              )}
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={() => {
+                  const matterId = (document.querySelector('[data-radix-collection-item]:not([data-disabled])') as HTMLElement)?.dataset.value;
+                  if (matterId) {
+                      const matter = matters?.find(m => m.id === matterId);
+                      if (matter) {
+                          actions.start(matter.id, matter.client_id);
+                      }
+                  }
+                }}
+                disabled={isLoading}
+                className="w-full"
+              >
+                Start
+              </Button>
+              <EntryFormDialog
+                trigger={
+                  <Button variant="secondary" size="sm" className="w-full">
+                    Add Entry
+                  </Button>
+                }
+                title="Add entry"
+                matters={matters}
+                entries={todays}
+                onSubmit={async (v) => {
+                  if (!user) return;
+                  const { error } = await supabase.from("entries").insert({
+                    user_id: user.id,
+                    matter_id: v.matter_id,
+                    client_id: v.client_id,
+                    start_at: v.start_at,
+                    end_at: v.end_at ?? null,
+                    notes: v.notes ?? null,
+                  });
+                  if (error) {
+                    toast({ title: "Error creating entry", description: error.message, variant: "destructive" });
+                  } else {
+                    qc.invalidateQueries({ queryKey: ["active-entry"] });
+                    toast({ title: "Entry created" });
+                  }
+                }}
+              />
+            </>
+          )}
         </div>
       </main>
     </div>

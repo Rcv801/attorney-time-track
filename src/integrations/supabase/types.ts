@@ -65,6 +65,7 @@ export type Database = {
           end_at: string | null
           id: string
           invoice_id: string | null
+          matter_id: string | null
           notes: string | null
           paused_at: string | null
           start_at: string
@@ -80,6 +81,7 @@ export type Database = {
           end_at?: string | null
           id?: string
           invoice_id?: string | null
+          matter_id?: string | null
           notes?: string | null
           paused_at?: string | null
           start_at: string
@@ -95,6 +97,7 @@ export type Database = {
           end_at?: string | null
           id?: string
           invoice_id?: string | null
+          matter_id?: string | null
           notes?: string | null
           paused_at?: string | null
           start_at?: string
@@ -114,6 +117,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entries_matter_id_fkey"
+            columns: ["matter_id"]
+            isOneToOne: false
+            referencedRelation: "matters"
             referencedColumns: ["id"]
           },
           {
@@ -164,6 +174,69 @@ export type Database = {
         }
         Relationships: []
       }
+      matters: {
+        Row: {
+          billing_type: string | null
+          client_id: string
+          created_at: string
+          description: string | null
+          flat_fee: number | null
+          hourly_rate: number | null
+          id: string
+          matter_number: string | null
+          name: string
+          status: string
+          trust_balance: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_type?: string | null
+          client_id: string
+          created_at?: string
+          description?: string | null
+          flat_fee?: number | null
+          hourly_rate?: number | null
+          id?: string
+          matter_number?: string | null
+          name: string
+          status?: string
+          trust_balance?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_type?: string | null
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          flat_fee?: number | null
+          hourly_rate?: number | null
+          id?: string
+          matter_number?: string | null
+          name?: string
+          status?: string
+          trust_balance?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matters_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -187,7 +260,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      migrate_existing_entries_to_matters: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

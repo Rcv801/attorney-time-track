@@ -1,130 +1,215 @@
-import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MatterSelector from "./MatterSelector";
+import { format } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
+import { localToUtc, getUserTimeZone } from "@/lib/dates";
+import type { Tables } from "@/integrations/supabase/types";
 
-type Client = { id: string; name: string; color?: string | null };
+type Matter = Tables<"matters"> & { client: Tables<"clients"> };
+type Entry = Tables<"entries">;
 
-export type EntryInitial = {
-  id?: string;
-  client_id?: string;
-  start_at?: string; // ISO
-  end_at?: string | null; // ISO or null
-  notes?: string | null;
+interface EntryFormDialogProps {
+  trigger?: React.ReactNode;
+  title?: string;
+  matters: Matter[] | undefined;
+  entries: Entry[] | undefined;
+  initial?: {
+    id?: string;
+    matter_id: string;
+    client_id: string;
+    start_at: string;
+    end_at: string | null;
+    notes: string | null;
+  };
+  onSubmit: (values: {
+    id?: string;
+    matter_id: string;
+    client_id: string;
+    start_at: string;
+    end_at?: string | null;
+    notes?: string | null;
+  }) => void;
+}
+
+const toLocalInput = (dateStr: string, formatStr: string) => {
+    const tz = getUserTimeZone();
+    const localDate = utcToZonedTime(new Date(dateStr), tz);
+    return format(localDate, formatStr);
 };
-
-export function toLocalInputValue(iso?: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-}
-
-export function fromLocalInputValue(val: string) {
-  // Interpret local datetime value and return ISO in UTC
-  if (!val) return "";
-  return new Date(val).toISOString();
-}
 
 export default function EntryFormDialog({
   trigger,
   title = "Add entry",
+  matters,
+  entries,
   initial,
-  clients,
   onSubmit,
-}: {
-  trigger: React.ReactNode;
-  title?: string;
-  initial?: EntryInitial;
-  clients: Client[] | undefined;
-  onSubmit: (values: Required<Pick<EntryInitial, "client_id" | "start_at">> & Partial<Omit<EntryInitial, "client_id" | "start_at">>) => Promise<void> | void;
-}) {
-  const tz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
+}: EntryFormDialogProps) {
   const [open, setOpen] = useState(false);
-  const [clientId, setClientId] = useState<string>(initial?.client_id ?? "");
-  const [startLocal, setStartLocal] = useState<string>(toLocalInputValue(initial?.start_at));
-  const [endLocal, setEndLocal] = useState<string>(toLocalInputValue(initial?.end_at ?? undefined));
-  const [notes, setNotes] = useState<string>(initial?.notes ?? "");
+  const [matterId, setMatterId] = useState(initial?.matter_id ?? "");
+  const [date, setDate] = useState(
+    initial?.start_at
+      ? toLocalInput(initial.start_at, "yyyy-MM-dd")
+      : format(new Date(), "yyyy-MM-dd")
+  );
+  const [startTime, setStartTime] = useState(
+    initial?.start_at
+      ? toLocalInput(initial.start_at, "HH:mm")
+      : "09:00"
+  );
+  const [endTime, setEndTime] = useState(
+    initial?.end_at ? toLocalInput(initial.end_at, "HH:mm") : ""
+  );
+  const [notes, setNotes] = useState(initial?.notes ?? "");
 
+  // Reset form when dialog opens
   useEffect(() => {
-    // Sync when initial changes (e.g., editing different rows)
-    setClientId(initial?.client_id ?? "");
-    setStartLocal(toLocalInputValue(initial?.start_at));
-    setEndLocal(toLocalInputValue(initial?.end_at ?? undefined));
-    setNotes(initial?.notes ?? "");
-  }, [initial?.client_id, initial?.start_at, initial?.end_at, initial?.notes]);
+    if (open && initial) {
+      setMatterId(initial.matter_id ?? "");
+      setDate(toLocalInput(initial.start_at, "yyyy-MM-dd"));
+      setStartTime(toLocalInput(initial.start_at, "HH:mm"));
+      setEndTime(
+        initial.end_at ? toLocalInput(initial.end_at, "HH:mm") : ""
+      );
+      setNotes(initial.notes ?? "");
+    } else if (open && !initial) {
+      setMatterId("");
+      setDate(format(new Date(), "yyyy-MM-dd"));
+      setStartTime("09:00");
+      setEndTime("");
+      setNotes("");
+    }
+  }, [open, initial]);
 
-  const canSave = clientId && startLocal && (!endLocal || new Date(endLocal) >= new Date(startLocal));
+  const selectedMatter = matters?.find((m) => m.id === matterId);
 
-  const handleSave = async () => {
-    if (!canSave) return;
-    await onSubmit({
-      client_id: clientId,
-      start_at: fromLocalInputValue(startLocal),
-      end_at: endLocal ? fromLocalInputValue(endLocal) : null,
-      notes: notes || null,
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!matterId || !selectedMatter) return;
+
+    const startAt = localToUtc(`${date}T${startTime}`);
+    const endAt = endTime ? localToUtc(`${date}T${endTime}`) : null;
+
+    onSubmit({
       id: initial?.id,
+      matter_id: matterId,
+      client_id: selectedMatter.client_id,
+      start_at: startAt.toISOString(),
+      end_at: endAt?.toISOString() ?? null,
+      notes: notes.trim() || null,
     });
     setOpen(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
+      <DialogTrigger asChild>
+        {trigger ?? <Button variant="secondary">Add Entry</Button>}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <div className="text-xs text-muted-foreground">Using time zone: {tz}</div>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Matter Selection */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Client</label>
-            <Select value={clientId} onValueChange={setClientId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <span className="inline-flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />{c.name}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Matter *</Label>
+            <MatterSelector
+              matters={matters}
+              entries={entries}
+              value={matterId}
+              onChange={setMatterId}
+              placeholder="Select a matter..."
+            />
+            {selectedMatter && (
+              <div className="flex items-center gap-2 text-sm">
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{
+                    backgroundColor: selectedMatter.client?.color ?? "#9ca3af",
+                  }}
+                />
+                <span className="text-muted-foreground">
+                  {selectedMatter.client?.name}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+
+          {/* Date */}
+          <div className="space-y-2">
+            <Label htmlFor="date">Date *</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Time Range */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Start</label>
-              <Input type="datetime-local" value={startLocal} onChange={(e) => setStartLocal(e.target.value)} />
+              <Label htmlFor="start">Start Time *</Label>
+              <Input
+                id="start"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">End (optional)</label>
-              <Input type="datetime-local" value={endLocal} onChange={(e) => setEndLocal(e.target.value)} />
+              <Label htmlFor="end">End Time</Label>
+              <Input
+                id="end"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty for running timer
+              </p>
             </div>
           </div>
+
+          {/* Notes */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Notes (optional)</label>
-            <Textarea rows={5} value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="What did you work on?"
+              rows={3}
+            />
           </div>
-          {endLocal && startLocal && new Date(endLocal) < new Date(startLocal) && (
-            <div className="text-sm text-destructive">End time must be after start time.</div>
-          )}
-          <div className="flex justify-end gap-2">
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSave} disabled={!canSave}>Save</Button>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!matterId}>
+              {initial?.id ? "Save Changes" : "Add Entry"}
+            </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -1,315 +1,379 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import EntryFormDialog from "@/components/EntryFormDialog";
-import StopTimerDialog from "@/components/StopTimerDialog";
+import MatterSelector from "@/components/MatterSelector";
+import QuickNoteInput from "@/components/QuickNoteInput";
+import { useTimer } from "@/hooks/useTimer";
+import {
+  calculateBillingAmount,
+  formatDuration,
+  roundToSixMinutes,
+  formatBillableHours,
+} from "@/lib/billing";
+import { startOfLocalDayUtc } from "@/lib/dates";
+import type { Tables } from "@/integrations/supabase/types";
 
-function startOfLocalDayUtc() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return new Date(start.getTime() - start.getTimezoneOffset() * 60000);
-}
+type Matter = Tables<"matters"> & { client: Tables<"clients"> };
+type Entry = Tables<"entries">;
 
 export default function Dashboard() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [clientId, setClientId] = useState<string>("");
-  const [elapsed, setElapsed] = useState<number>(0);
-  const [showStopDialog, setShowStopDialog] = useState(false);
+  const {
+    activeEntry,
+    elapsed,
+    isRunning,
+    isPaused,
+    isLoading,
+    quickSwitchState,
+    actions,
+  } = useTimer();
 
-  const { data: clients } = useQuery({
-    queryKey: ["clients"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id,name,color,hourly_rate").order("name");
-      if (error) throw error; return data as any[];
-    },
-  });
-
-  const { data: active } = useQuery({
-    queryKey: ["active-entry"],
+  // Fetch matters with client info
+  const { data: matters } = useQuery({
+    queryKey: ["matters"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("entries")
-        .select("id,start_at,notes,client_id,end_at,paused_at,total_paused_seconds")
-        .is("end_at", null)
-        .maybeSingle();
-      if (error) throw error; return data as any;
+        .from("matters")
+        .select("*, client:clients(*)")
+        .eq("status", "active")
+        .order("name");
+      if (error) throw error;
+      return data as Matter[];
     },
   });
 
-  useEffect(() => {
-    if (!active?.start_at) { setElapsed(0); return; }
-    
-    // Parse timestamps once to avoid repeated parsing
-    const startTime = new Date(active.start_at).getTime();
-    const pausedAtTime = active.paused_at ? new Date(active.paused_at).getTime() : null;
-    const totalPaused = active.total_paused_seconds || 0;
-    
-    // Update elapsed time every second
-    // This approach prevents drift by calculating from Date.now() on each tick
-    // rather than incrementing a counter
-    const i = setInterval(() => {
-      if (pausedAtTime) {
-        // Timer is paused: show time from start to pause point, minus total paused duration
-        const pausedElapsed = Math.floor((pausedAtTime - startTime) / 1000) - totalPaused;
-        setElapsed(pausedElapsed);
-      } else {
-        // Timer is running: calculate current elapsed time minus total paused duration
-        // Using Date.now() ensures accuracy and prevents drift over long periods
-        const currentElapsed = Math.floor((Date.now() - startTime) / 1000) - totalPaused;
-        setElapsed(currentElapsed);
-      }
-    }, 1000);
-    
-    return () => clearInterval(i);
-  }, [active?.start_at, active?.paused_at, active?.total_paused_seconds]);
-
+  // Fetch today's entries
   const { data: todays } = useQuery({
     queryKey: ["entries-today"],
     queryFn: async () => {
-      const from = startOfLocalDayUtc().toISOString();
+      const from = startOfLocalDayUtc(new Date()).toISOString();
       const { data, error } = await supabase
         .from("entries")
-        .select("id,client_id,start_at,end_at,duration_sec,notes,client:clients(name,hourly_rate,color)")
+        .select("*, matter:matters(*, client:clients(*))")
         .gte("start_at", from)
         .order("start_at", { ascending: false });
-      if (error) throw error; return data as any[];
-    },
-  });
-
-  const startMut = useMutation({
-    mutationFn: async () => {
-      if (!clientId) throw new Error("Select a client");
-      if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("entries").insert({ client_id: clientId, start_at: new Date().toISOString(), user_id: user.id });
       if (error) throw error;
+      return data as (Entry & { matter: Matter })[];
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-      qc.invalidateQueries({ queryKey: ["entries-today"] });
-    },
-    onError: (e: any) => toast({ title: "Cannot start", description: e.message }),
   });
 
-  const pauseMut = useMutation({
-    mutationFn: async () => {
-      if (!active?.id) return;
-      const { error } = await supabase.from("entries").update({ 
-        paused_at: new Date().toISOString()
-      }).eq("id", active.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-    },
-    onError: (e: any) => toast({ title: "Cannot pause", description: e.message }),
-  });
-
-  const resumeMut = useMutation({
-    mutationFn: async () => {
-      if (!active?.id || !active?.paused_at) return;
-      const pausedDuration = Math.floor((Date.now() - new Date(active.paused_at).getTime()) / 1000);
-      const newTotalPaused = (active.total_paused_seconds || 0) + pausedDuration;
-      
-      const { error } = await supabase.from("entries").update({ 
-        paused_at: null,
-        total_paused_seconds: newTotalPaused
-      }).eq("id", active.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-    },
-    onError: (e: any) => toast({ title: "Cannot resume", description: e.message }),
-  });
-
-  const stopMut = useMutation({
-    mutationFn: async (notes: string) => {
-      if (!active?.id) return;
-      let updateData: any = { end_at: new Date().toISOString(), notes };
-      
-      // If paused, calculate final paused time
-      if (active.paused_at) {
-        const pausedDuration = Math.floor((Date.now() - new Date(active.paused_at).getTime()) / 1000);
-        updateData.total_paused_seconds = (active.total_paused_seconds || 0) + pausedDuration;
-        updateData.paused_at = null;
-      }
-      
-      const { error } = await supabase.from("entries").update(updateData).eq("id", active.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setShowStopDialog(false);
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-      qc.invalidateQueries({ queryKey: ["entries-today"] });
-    },
-    onError: (e: any) => toast({ title: "Cannot stop", description: e.message }),
-  });
-
-  const handleStopTimer = () => {
-    setShowStopDialog(true);
-  };
-
-  const handleConfirmStop = (notes: string) => {
-    stopMut.mutate(notes);
-  };
-
-  const running = Boolean(active);
-  const paused = Boolean(active?.paused_at);
-  const activeRate = clients?.find(c => c.id === (active?.client_id ?? clientId))?.hourly_rate ?? 0;
-  
-  // Calculate billing amount based on elapsed time (which already excludes paused duration)
-  // This ensures paused timers show accurate billing amounts
-  const activeAmount = running ? (elapsed/3600) * Number(activeRate ?? 0) : 0;
-  const elapsedHMS = useMemo(() => {
-    let s = 0;
-    if (running && active?.start_at) {
-      s = elapsed;
-    } else if (active?.start_at && active?.end_at) {
-      s = Math.floor((new Date(active.end_at).getTime() - new Date(active.start_at).getTime()) / 1000);
+  const handleMatterSelect = (selectedMatterId: string) => {
+    if (!selectedMatterId) return;
+    const matter = matters?.find((m) => m.id === selectedMatterId);
+    if (matter) {
+      actions.quickSwitch({ id: matter.id, client_id: matter.client_id, name: matter.name });
     }
-    const hh = String(Math.floor(s / 3600)).padStart(2, "0");
-    const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-    const ss = String(s % 60).padStart(2, "0");
-    return `${hh}:${mm}:${ss}`;
-  }, [elapsed, running, active]);
-  const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' });
-  const tz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
+  };
 
-  const onCreate = async (values: { client_id: string; start_at: string; end_at?: string | null; notes?: string | null }) => {
+  const handleQuickNoteSubmit = (notes: string) => {
+    actions.submitQuickAction(notes);
+  };
+  
+  const handleQuickNoteSkip = () => {
+    actions.submitQuickAction(""); // Submit with empty notes
+  };
+
+  // Calculate billing info with 6-minute rounding
+  const activeMatter = activeEntry?.matter;
+  const activeRate = activeMatter?.hourly_rate ?? activeMatter?.client?.hourly_rate ?? 0;
+  const billableHours = roundToSixMinutes(elapsed);
+  const activeAmount = calculateBillingAmount(elapsed, activeRate);
+
+  // Formatter - memoized to avoid recreating on every render
+  const fmt = useMemo(() => new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "USD",
+  }), []);
+
+  // Entry mutations for manual add/edit with error handling
+  const onCreate = async (values: {
+    matter_id: string;
+    client_id: string;
+    start_at: string;
+    end_at?: string | null;
+    notes?: string | null;
+  }) => {
     if (!user) return;
     const { error } = await supabase.from("entries").insert({
       user_id: user.id,
+      matter_id: values.matter_id,
       client_id: values.client_id,
       start_at: values.start_at,
       end_at: values.end_at ?? null,
       notes: values.notes ?? null,
     });
-    if (!error) {
+    if (error) {
+      toast({ title: "Error creating entry", description: error.message, variant: "destructive" });
+    } else {
       qc.invalidateQueries({ queryKey: ["entries-today"] });
+      toast({ title: "Entry created" });
     }
   };
 
-  const onUpdate = async (values: { id?: string; client_id: string; start_at: string; end_at?: string | null; notes?: string | null }) => {
+  const onUpdate = async (values: {
+    id?: string;
+    matter_id: string;
+    client_id: string;
+    start_at: string;
+    end_at?: string | null;
+    notes?: string | null;
+  }) => {
     if (!values.id) return;
-    const { error } = await supabase.from("entries").update({
-      client_id: values.client_id,
-      start_at: values.start_at,
-      end_at: values.end_at ?? null,
-      notes: values.notes ?? null,
-    }).eq("id", values.id);
-    if (!error) {
+    const { error } = await supabase
+      .from("entries")
+      .update({
+        matter_id: values.matter_id,
+        client_id: values.client_id,
+        start_at: values.start_at,
+        end_at: values.end_at ?? null,
+        notes: values.notes ?? null,
+      })
+      .eq("id", values.id);
+    if (error) {
+      toast({ title: "Error updating entry", description: error.message, variant: "destructive" });
+    } else {
       qc.invalidateQueries({ queryKey: ["entries-today"] });
+      toast({ title: "Entry updated" });
     }
   };
 
   return (
     <div className="space-y-6">
-      <SEO title="Dashboard – Time App" description="Track time with a Start/Stop timer and see today’s entries." canonical={window.location.href} />
+      <SEO
+        title="Dashboard – Time App"
+        description="Track time with a Start/Stop timer and see today's entries."
+      />
+
+      {/* Timer Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Timer</CardTitle>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open('/popout/timer', 'timer-popout', 'width=380,height=560,menubar=no,toolbar=no,location=no,status=no')}
+            onClick={() =>
+              window.open(
+                "/app/TimerPopout",
+                "timer-popout",
+                "width=380,height=560,menubar=no,toolbar=no,location=no,status=no"
+              )
+            }
           >
             Open Popout
           </Button>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="text-6xl md:text-7xl font-bold">{elapsedHMS}</div>
-          {running && <div className="text-muted-foreground">So far: {fmt.format(activeAmount || 0)}</div>}
+          {/* Timer Display */}
+          <div className="text-center">
+            <div className="text-6xl md:text-7xl font-bold">
+              {formatDuration(elapsed)}
+            </div>
+            {activeEntry && (
+              <div className="mt-2 space-y-1">
+                <div className="text-lg text-muted-foreground">
+                  So far: {fmt.format(activeAmount)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {formatBillableHours(billableHours)}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Note Input (shown when switching/stopping) */}
+          {quickSwitchState.show && (
+            <div className="bg-muted rounded-lg p-4">
+              <QuickNoteInput
+                matterName={quickSwitchState.stoppedMatterName}
+                onSubmit={handleQuickNoteSubmit}
+                onSkip={handleQuickNoteSkip}
+                isLoading={isLoading}
+              />
+            </div>
+          )}
+
+          {/* Matter Selection */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">Using time zone: {tz}</div>
+              <label className="text-sm font-medium">Matter</label>
               <EntryFormDialog
-                trigger={<Button variant="secondary" size="sm">Add Entry</Button>}
+                trigger={
+                  <Button variant="ghost" size="sm">
+                    Add Entry
+                  </Button>
+                }
                 title="Add entry"
-                clients={clients}
+                matters={matters}
+                entries={todays}
                 onSubmit={onCreate}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <div className="md:col-span-1">
-                <label className="text-sm font-medium mb-2 block">Client</label>
-                <Select onValueChange={setClientId} value={clientId || active?.client_id || ""} disabled={running}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        <span className="inline-flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: c.color ?? '#9ca3af' }} />{c.name}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="md:col-span-1 space-y-2">
-                {running ? (
-                  <div className="space-y-2">
-                    {paused ? (
-                      <Button onClick={() => resumeMut.mutate()} disabled={resumeMut.isPending} className="w-full">Resume</Button>
-                    ) : (
-                      <Button onClick={() => pauseMut.mutate()} disabled={pauseMut.isPending} variant="secondary" className="w-full">Pause</Button>
-                    )}
-                    <Button onClick={handleStopTimer} disabled={stopMut.isPending} className="w-full">Stop</Button>
-                  </div>
+            <MatterSelector
+              matters={matters}
+              entries={todays}
+              value={activeEntry?.matter_id ?? ""}
+              onChange={handleMatterSelect}
+              disabled={quickSwitchState.show || isLoading}
+            />
+            {activeMatter && (
+              <div className="flex items-center gap-2 text-sm">
+                <Badge variant="outline">{activeMatter.client?.name}</Badge>
+                {activeRate > 0 ? (
+                  <span className="text-muted-foreground">
+                    @ ${activeRate}/hr
+                  </span>
                 ) : (
-                  <Button onClick={() => startMut.mutate()} disabled={startMut.isPending || !clientId || !user} className="w-full">Start</Button>
+                  <Badge variant="destructive" className="text-xs">No rate set</Badge>
                 )}
               </div>
-            </div>
+            )}
+          </div>
+
+          {/* Control Buttons */}
+          <div className="space-y-2">
+            {activeEntry ? (
+              <div className="grid grid-cols-2 gap-2">
+                {isPaused ? (
+                  <Button
+                    onClick={actions.resume}
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    Resume
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={actions.pause}
+                    disabled={isLoading}
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    Pause
+                  </Button>
+                )}
+                <Button
+                  onClick={actions.stop}
+                  disabled={quickSwitchState.show || isLoading}
+                  variant="default"
+                  className="w-full"
+                >
+                  Stop
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={() => {
+                  const matterId = (document.querySelector('[data-radix-collection-item]:not([data-disabled])') as HTMLElement)?.dataset.value;
+                  if (matterId) {
+                      const matter = matters?.find(m => m.id === matterId);
+                      if (matter) {
+                          actions.start(matter.id, matter.client_id);
+                      }
+                  }
+                }}
+                disabled={isLoading || !user}
+                className="w-full"
+              >
+                Start Timer
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      <StopTimerDialog
-        open={showStopDialog}
-        onOpenChange={setShowStopDialog}
-        onConfirm={handleConfirmStop}
-        isLoading={stopMut.isPending}
-      />
-
+      {/* Today's Entries */}
       <Card>
         <CardHeader>
-          <CardTitle>Today’s entries</CardTitle>
+          <CardTitle>Today's Entries</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {todays?.length ? todays.map((e) => {
-            const amount = e.duration_sec ? (Number(e.client?.hourly_rate ?? 0) * (e.duration_sec / 3600)) : 0;
-            return (
-              <div key={e.id} className="flex items-center justify-between border rounded p-2">
-                <div className="text-sm">
-                  <div className="font-medium">{e.client?.name}</div>
-                  <div className="text-muted-foreground">{new Date(e.start_at).toLocaleTimeString()} – {e.end_at ? new Date(e.end_at).toLocaleTimeString() : "…"}</div>
-                  <div>{e.notes}</div>
+          {todays?.length ? (
+            todays.map((e) => {
+              const duration = e.duration_sec ?? 0;
+              const billable = roundToSixMinutes(duration);
+              const rate =
+                e.matter?.hourly_rate ?? e.matter?.client?.hourly_rate ?? 0;
+              const amount = billable * rate;
+
+              return (
+                <div
+                  key={e.id}
+                  className="flex items-center justify-between border rounded-lg p-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-3 w-3 rounded-full shrink-0"
+                        style={{
+                          backgroundColor:
+                            e.matter?.client?.color ?? "#9ca3af",
+                        }}
+                      />
+                      <span className="font-medium truncate">
+                        {e.matter?.client?.name} — {e.matter?.name}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {new Date(e.start_at).toLocaleTimeString()} –{" "}
+                      {e.end_at
+                        ? new Date(e.end_at).toLocaleTimeString()
+                        : "…"}
+                      {" "}• {formatBillableHours(billable)}
+                    </div>
+                    {e.notes && (
+                      <div className="text-sm mt-1 truncate">{e.notes}</div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 ml-4">
+                    <div className="text-right">
+                      <div className="font-medium">{fmt.format(amount)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDuration(duration)}
+                      </div>
+                    </div>
+                    <EntryFormDialog
+                      trigger={<Button variant="outline" size="sm">Edit</Button>}
+                      title="Edit entry"
+                      initial={{
+                        id: e.id,
+                        matter_id: e.matter_id ?? "",
+                        client_id: e.client_id,
+                        start_at: e.start_at,
+                        end_at: e.end_at,
+                        notes: e.notes,
+                      }}
+                      matters={matters}
+                      entries={todays}
+                      onSubmit={onUpdate}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        await supabase.from("entries").delete().eq("id", e.id);
+                        qc.invalidateQueries({ queryKey: ["entries-today"] });
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-sm font-medium">{amount ? fmt.format(amount) : ""}</div>
-                  <EntryFormDialog
-                    trigger={<Button variant="outline" size="sm">Edit</Button>}
-                    title="Edit entry"
-                    initial={{ id: e.id, client_id: e.client?.id ?? e.client_id, start_at: e.start_at, end_at: e.end_at, notes: e.notes }}
-                    clients={clients}
-                    onSubmit={onUpdate}
-                  />
-                  <Button variant="outline" size="sm" onClick={async () => {
-                    await supabase.from("entries").delete().eq("id", e.id);
-                    qc.invalidateQueries({ queryKey: ["entries-today"] });
-                  }}>Delete</Button>
-                </div>
-              </div>
-            );
-          }) : <div className="text-sm text-muted-foreground">No entries yet.</div>}
+              );
+            })
+          ) : (
+            <div className="text-sm text-muted-foreground text-center py-8">
+              No entries yet. Select a matter and start the timer.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
