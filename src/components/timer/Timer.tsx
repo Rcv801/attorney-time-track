@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Play, Pause, Square, Loader2 } from "lucide-react";
 import { useTimer } from "@/hooks/useTimer";
 import { formatDuration } from "@/lib/billing";
-import MatterQuickSelect from "./MatterQuickSelect";
 import { cn } from "@/lib/utils";
 import QuickSwitchDialog from "./QuickSwitchDialog";
 
@@ -89,10 +88,7 @@ const Timer = () => {
               <Square className="h-5 w-5" />
             </Button>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">Quick Start</h3>
-            <MatterQuickSelect />
-          </div>
+          {/* Quick start moved to Dashboard */}
         </CardContent>
       </Card>
       <QuickSwitchDialog />

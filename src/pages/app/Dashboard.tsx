@@ -7,6 +7,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { formatDuration, formatBillableHours, roundToSixMinutes, calculateBillingAmount } from "@/lib/billing";
 import { differenceInSeconds, startOfDay } from "date-fns";
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
+import MatterQuickSelect from "@/components/timer/MatterQuickSelect";
 
 type Entry = Tables<"entries"> & { matter: Tables<"matters"> & { client: Tables<"clients"> } };
 
@@ -83,6 +84,19 @@ const Dashboard = () => {
         />
       </div>
 
+      {/* Quick Start — pinned matters */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Quick Start</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Pin your most-used matters here for one-click time tracking.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <MatterQuickSelect />
+        </CardContent>
+      </Card>
+
       {/* Timer + Today's entries */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Timer />
@@ -91,26 +105,31 @@ const Dashboard = () => {
             <CardTitle>Today's Entries</CardTitle>
           </CardHeader>
           <CardContent>
-            {entries && entries.length > 0 ? (
+            {entries && entries.filter(e => e.end_at).length > 0 ? (
               <ul className="space-y-3">
                 {entries
                   .filter((e) => e.end_at)
-                  .map((entry) => (
-                    <li
-                      key={entry.id}
-                      className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{entry.matter?.name ?? "Unknown"}</p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {entry.notes || "No notes"}
+                  .map((entry) => {
+                    const clientName = entry.matter?.client?.name;
+                    const matterName = entry.matter?.name ?? "Unknown";
+                    const displayName = clientName ? `${clientName} — ${matterName}` : matterName;
+                    return (
+                      <li
+                        key={entry.id}
+                        className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{displayName}</p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {entry.notes || "No notes"}
+                          </p>
+                        </div>
+                        <p className="font-mono text-sm tabular-nums ml-4 shrink-0">
+                          {formatDuration(getEntrySeconds(entry))}
                         </p>
-                      </div>
-                      <p className="font-mono text-sm tabular-nums ml-4 shrink-0">
-                        {formatDuration(getEntrySeconds(entry))}
-                      </p>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
               </ul>
             ) : (
               <p className="text-center text-muted-foreground py-8">
