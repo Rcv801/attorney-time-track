@@ -17,7 +17,7 @@ A persistent, always-accessible timer that lets attorneys switch between matters
 Attorneys forget to start timers — it's the #1 pain point in every Reddit thread. Make it dead simple to enter time after the fact with date, duration, matter, and description. Forgive bad habits instead of punishing them.
 
 ### 3. Smart Autocomplete for Clients, Matters & Task Codes
-Type 2–3 characters to find a client or matter. Pre-populated legal task codes (Research, Drafting, Court Appearance, Client Communication, etc.) reduce entry friction to near-zero.
+Type 2–3 characters to find a client or matter. Comes pre-populated with common legal task codes (Research, Drafting, Court Appearance, Client Communication, etc.) and allows users to add their own custom codes for frequent tasks, reducing entry friction to near-zero.
 
 ### 4. 0.1-Hour (6-Minute) Billing Increments
 The legal billing standard. Automatic rounding with configurable rules (round up to nearest tenth, minimum increment, etc.).
@@ -46,10 +46,13 @@ Attorneys are in court, in meetings, in their car. A fast, mobile-first progress
 ### 12. Expense Tracking
 Log hard costs (filing fees, copies, postage) against matters for inclusion on invoices. Simple line items with date, amount, description, and matter.
 
-### 13. Basic Reporting
-Hours by matter, revenue by period, outstanding accounts receivable, trust account balances. Enough for a solo to understand their practice economics without an analytics dashboard.
+### 13. Attorney & Task Analytics
+Generate reports on key practice metrics. For solos, this includes revenue by period, hours by matter, and accounts receivable. For firms, admins can view billable hours and revenue broken down by attorney. All users can analyze their own time, breaking it down by task type (e.g., 'Drafting', 'Court Appearance') to understand where their time is going.
 
-### 14. Data Export
+### 14. Automated Email Activity Summaries
+Users can configure automatic email summaries of their billing activity on a daily or weekly schedule. Summaries include total hours billed, revenue generated, and a per-client/matter breakdown. Firm admins can receive firm-wide summaries across all attorneys. Fully configurable — choose frequency, level of detail, and whether to include only active matters or everything.
+
+### 15. Data Export
 Full CSV/Excel export of all time entries, invoices, and financial data. No lock-in. Attorneys should be able to leave at any time with all their data.
 
 ### 15. 5-Minute Onboarding
