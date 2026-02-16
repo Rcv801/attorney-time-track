@@ -1,6 +1,8 @@
 # Attorney Time Tracking & Billing Software — Competitive Intelligence Report
 
-*Last updated: February 7, 2026*
+*Last updated: February 15, 2026*
+
+> **Feb 15 Update:** Refreshed all competitor pricing. Key changes: MyCase Pro tier increased from $59 to $89/user/mo. CosmoLex confirmed at $89-109/user/mo entry. Bill4Time now $39/user/mo base. PracticePanther offers free-for-life tier (3 clients max). Clio Work/Duo tier at $199-219/user/mo confirmed. See `market-research-2026-02-15.md` for full analysis.
 
 ---
 

@@ -1,6 +1,6 @@
 # Reddit Pain Points: Attorney Time Tracking & Billing Software
 
-**Research Date:** February 7, 2026  
+**Research Date:** February 7, 2026 (updated February 15, 2026)  
 **Sources:** Reddit (r/LawFirm, r/Lawyertalk, r/paralegal, r/asklawyers, r/publicdefenders, r/ask_lawyers, r/freelancers, r/smallbusiness)  
 **Method:** Reddit Insights API semantic search + Brave web search + Reddit JSON API for comment extraction  
 **Searches Performed:** 11 distinct queries across legal and professional subreddits
@@ -313,3 +313,34 @@ Based on Reddit sentiment:
 | [Can someone explain billing to me?](https://reddit.com/r/Lawyertalk/comments/1khs0d0/) | r/Lawyertalk | May 2025 | — | — |
 | [Is there anyone who enters their billable hours together later?](https://reddit.com/r/LawFirm/comments/150ieh4/) | r/LawFirm | Jul 2023 | — | — |
 | [Does anyone else hate keeping up/billing their time?](https://reddit.com/r/paralegal/comments/73aqes/) | r/paralegal | Oct 2017 | — | — |
+
+---
+
+## Appendix: February 15, 2026 Update — New Posts Found
+
+| Title | Subreddit | Score | Comments | Date | Key Pain Point | Link |
+|---|---|---|---|---|---|---|
+| Suggestions for billing software | r/LawFirm | 5 | 15 | Jan 26, 2026 | 400 trust accounts on Excel; rejects Clio; doesn't want time tracking in system | [link](https://www.reddit.com/r/LawFirm/comments/1qnjl1u/suggestions_for_billing_software/) |
+| Best Legal Billing Software, top pick? | r/LawFirm | 26 | 34 | Dec 13, 2025 | 3-attorney firm; Clio "overwhelming"; wants simple + QuickBooks | [link](https://www.reddit.com/r/LawFirm/comments/1plnori/best_legal_billing_software_whats_your_top_pick/) |
+| Tracking time and billing software | r/LawFirm | 11 | 41 | Nov 6, 2025 | Sage Timeslips "DREADFUL"; wants user-friendly tracking | [link](https://www.reddit.com/r/LawFirm/comments/1oq8kib/tracking_time_and_billing_software/) |
+| Cheapest solo billing software | r/LawFirm | 14 | 40 | Nov 21, 2024 | Bill4Time price increases + horrible mobile app | [link](https://www.reddit.com/r/LawFirm/comments/1gwn7hh/cheapest_solo_billing_software/) |
+| Clio the Killer: Alternatives? | r/LawFirm | 20 | 51 | Jul 18, 2024 | $600+/mo for Clio; performance "hangs and hangs" | [link](https://www.reddit.com/r/LawFirm/comments/1e6kf43/clio_the_killer_alternatives/) |
+| Need new timekeeping/billing software | r/LawFirm | 2 | 7 | Feb 21, 2025 | 15-lawyer firm: "don't need 90% of Clio/MyCase" | [link](https://www.reddit.com/r/LawFirm/comments/1iv2ucm/need_new_timekeepingbilling_software_suggestions/) |
+| PointOne AI time tracking | r/LawFirm | 3 | 7 | Jan 22, 2026 | AI time tracking emerging; screen capture + API integrations | [link](https://www.reddit.com/r/LawFirm/comments/1qjhpkl/pointone_ai_time_tracking/) |
+| Best legal case management for small firms | r/LawFirm | 17 | 45 | Jan 21, 2026 | Solo: docs scattered, billing messy, needs real system | [link](https://www.reddit.com/r/LawFirm/comments/1qiyes2/what_is_the_best_legal_case_management_software/) |
+| Any other solos have a "must have" tool? | r/LawFirm | 73 | 89 | Jan 21, 2026 | Uses Clio as "anchor"; fear of overhead is primary concern | [link](https://www.reddit.com/r/LawFirm/comments/1qittvf/any_other_solos_have_a_must_have_tool_i_missed/) |
+| End of month billing chaos | r/LawFirm | 3 | 9 | Feb 7, 2026 | Manual vendor invoice entry; wants reconciliation tools | [link](https://www.reddit.com/r/LawFirm/comments/1qyc1yn/end_of_month_billing_chaos_and_vendors_invoices/) |
+| Handling Unpaid Client Invoices | r/LawFirm | 9 | 14 | Feb 1, 2026 | Thousands in unpaid invoices; collection workflow gaps | [link](https://www.reddit.com/r/LawFirm/comments/1qtc2o6/handling_unpaid_client_invoices/) |
+| LEDES file + receipts automation | r/LawFirm | 2 | 8 | Sep 18, 2025 | Clio LEDES export requires painful multi-step receipt attachment | [link](https://www.reddit.com/r/LawFirm/comments/1nkgz1j/has_anyone_come_across_a_billing_system_that_can/) |
+| OFFLINE IOLTA Management | r/LawFirm | 13 | 4 | Jan 2, 2026 | Uses spreadsheets for IOLTA by choice; "insane fees" for software | [link](https://www.reddit.com/r/LawFirm/comments/1q23843/offline_iolta_management/) |
+| Seeking easy time keeping / IOLTA program | r/LawFirm | 1 | 7 | Apr 18, 2025 | Smokeball = "overpriced turd"; Clio = "clunky"; wants standalone billing | [link](https://www.reddit.com/r/LawFirm/comments/1k28svn/seeking_recommendations_for_easy_time_keeping/) |
+| Billing software formula error | r/LawFirm | 5 | 49 | Apr 26, 2025 | Excel formula broke; undercharged $200; "utterly terrible" | [link](https://www.reddit.com/r/LawFirm/comments/1k81l8q/i_messed_up_some_billing_i_undercharged_20000_on/) |
+| Solo Attorney: Help with automations | r/LawFirm | 23 | 39 | Dec 11, 2025 | MyCase user struggling to connect tools via Zapier | [link](https://www.reddit.com/r/LawFirm/comments/1pk67cm/solo_attorney_help_with_automations/) |
+| Smartadvocate vs Clio for PI | r/LawFirm | 1 | 6 | Jan 26, 2026 | SmartAdvocate customer service declining | [link](https://www.reddit.com/r/LawFirm/comments/1qng26n/smartadvocate_vs_clio_for_pi/) |
+
+### New Themes Identified (Feb 15 Update)
+- **AI time tracking** is now actively discussed (PointOne, Billables AI) — attorneys want auto-generated entries
+- **Bill4Time** specifically losing customers on price hikes + bad mobile app
+- **Spreadsheet users with 400+ trust accounts** — high-value targets stuck on Excel
+- **"Overpriced turd"** sentiment extends beyond Clio to Smokeball and others
+- **Credit card fee passthrough** is a requested micro-feature (PracticePanther lacks it)
