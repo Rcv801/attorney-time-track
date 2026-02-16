@@ -12,9 +12,10 @@ Lean time tracking & billing app for solo/small firm attorneys. "The anti-Clio."
 - **Built with:** Lovable.dev (syncs with their platform)
 
 ## Dev Workflow
-- **Hybrid:** direct push to main for small stuff, heads up for big changes
-- Every push to main auto-deploys to Vercel
-- Dev environment set up, build passes clean
+- **Feature branches + PRs** — main is protected, requires 1 approval
+- Every merge to main auto-deploys to Vercel
+- Bill creates PRs, pings Ryan on Telegram for review
+- GitHub Projects board: https://github.com/users/Rcv801/projects/1
 
 ## Research
 - `research/competitor-analysis.md` — competitive landscape, pricing, strategy
@@ -36,4 +37,4 @@ Lean time tracking & billing app for solo/small firm attorneys. "The anti-Clio."
 
 ## Owner
 - **Ryan Vantrease** (Rcv801) — practicing attorney, product vision
-- **Atlas** — development, research, automation
+- **Bill Brasky** 🥃 — project leader, development, automation (replaced Atlas Feb 15, 2026)

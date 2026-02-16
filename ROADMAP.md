@@ -1,6 +1,6 @@
 # Attorney Time Track — Product Vision & Roadmap
 
-**Last updated:** February 7, 2026
+**Last updated:** February 15, 2026
 
 ---
 
@@ -27,26 +27,27 @@
 ### 2. Matters (THE Missing Piece)
 Attorneys track time per **matter** (case), not just per client. One client can have multiple active matters.
 
-- 🔄 **Matters data model** — Client → Matters → Entries (NEEDS IMPLEMENTATION)
-- Matter status: Active / Closed
-- Matter number for reference
-- Time entries attach to a matter
+- ✅ **Matters data model** — Client → Matters → Entries (DB + UI + CRUD)
+- ✅ Matter status: Active / Closed
+- ✅ Matter number for reference
+- ✅ Time entries attach to a matter
+- ✅ Matter pinning for quick access
 - This is what separates a legal tool from a generic tracker
 
 ### 3. Invoicing
-- 🔄 **Generate invoice PDF from unbilled entries** — filtered by matter (NEEDS IMPLEMENTATION)
+- 🔄 **Generate invoice PDF from unbilled entries** — DB schema exists, NO UI or PDF generation yet
 - Professional output with firm name, matter details, itemized entries
 - Hourly + flat fee billing support
 - Email invoice directly to client
-- ✅ **Mark entries as invoiced** — partially built, needs protection from editing
-- 🔄 **Payment tracking** — paid/unpaid/partial (NEEDS IMPLEMENTATION)
+- 🔄 **Mark entries as invoiced** — DB supports it, UI incomplete
+- 🔄 **Payment tracking** — paid/unpaid/partial (NOT STARTED)
 
 ### 4. Trust/IOLTA Tracking
 Table stakes for legal. This is why attorneys can't just use Toggl.
 
-- 🔄 **Retainer deposits per matter** (NEEDS IMPLEMENTATION)
-- 🔄 **Auto-draw-down as time is billed** (NEEDS IMPLEMENTATION)
-- 🔄 **Current balance display per matter** (NEEDS IMPLEMENTATION)
+- 🔄 **Retainer deposits per matter** — `trust_balance` field exists in DB, NO UI
+- 🔄 **Auto-draw-down as time is billed** (NOT STARTED)
+- 🔄 **Current balance display per matter** (NOT STARTED)
 
 ### 5. Online Payments
 - 🔄 **Stripe integration** (NEEDS IMPLEMENTATION)
@@ -61,7 +62,7 @@ Table stakes for legal. This is why attorneys can't just use Toggl.
 - ✅ **Add, edit, archive clients** — built
 - ✅ **Hourly rate per client** — built
 - ✅ **Color coding** — built
-- 🔄 **Parent of matters** — needs Matters model first
+- ✅ **Parent of matters** — Client → Matter hierarchy built
 
 ### 7. Dashboard
 - ✅ **Today's entries list** — built
@@ -170,31 +171,42 @@ The app succeeds if a solo attorney can:
 
 ---
 
-## Current Status (Feb 7, 2026)
+## Current Status (Feb 15, 2026)
 
-**Built ✅:**
-- Running timer with start/stop/pause/resume
-- Client selector with color coding and hourly rates
-- Manual entry form (date, client, start/end, notes)
-- Today's entries list with edit/delete
-- Full entries page with date filtering, CSV export, print, archive
-- Timer popout window
-- Stop timer dialog with notes
-- Clients page (add, edit, archive, color, rate)
-- Invoice creation dialog (UI only)
+**Audited by Bill Brasky — verified against actual source code.**
+
+**Built ✅ (confirmed in code):**
+- Timer: start/stop/pause/resume with elapsed tracking
+- 6-minute increment rounding (`lib/billing.ts` — rounds UP, min 0.1hr)
+- Matters: full data model, CRUD, Client → Matter hierarchy
+- Matter pinning, matter numbers, active/closed status
+- Quick-switch timer with notes dialog
+- Matter quick-select component
+- Clients page: add, edit, archive, color coding, hourly rates
+- Entries page: date filtering, CSV export, archive
+- Dashboard: today's entries, active timer with billing amount
 - Supabase auth with RequireAuth
 - Real-time billing amount display
+- Keyboard shortcuts (⌘K search)
+- 6 DB migrations synced (matters, seed data, archived entries, RLS, pinning)
 
-**Missing 🔄:**
-- Matters data model
-- 6-minute increment rounding
-- Quick-switch timer
+**Schema exists, NO UI 🔄:**
+- Invoices table (client_id, date_range, total_amount, file_url) — no page, no PDF
+- Trust balance field on matters — no deposit/withdrawal UI
+
+**Not started ❌:**
 - Invoice PDF generation
-- Trust/retainer tracking
+- Invoice page/workflow
+- Payment tracking (paid/unpaid/partial)
+- Stripe integration
 - LEDES export
-- Stripe payments
-- Email delivery
-- Reports
+- Email invoices
+- Reports page
+- Settings page
+- Trust/IOLTA tracking UI
+- PWA / mobile optimization
+
+**Overall: Phase 1 is ~70% complete.** Core time tracking + matters is solid. Invoicing and trust tracking (Phase 1 items 4-5) need full UI builds.
 
 ---
 
