@@ -72,7 +72,7 @@ const MatterQuickSelect = () => {
       .filter(Boolean) as Matter[];
   }, [allMatters, pinnedIds]);
 
-  // Search results (exclude already pinned)
+  // Search results
   const searchResults = useMemo(() => {
     if (!allMatters || !searchQuery.trim()) return allMatters ?? [];
     const q = searchQuery.toLowerCase();
@@ -81,6 +81,12 @@ const MatterQuickSelect = () => {
       m.client?.name?.toLowerCase().includes(q)
     );
   }, [allMatters, searchQuery]);
+
+  // Fallback quick-start list when nothing is pinned yet
+  const quickStartMatters = useMemo(() => {
+    if (!allMatters) return [];
+    return allMatters.slice(0, 6);
+  }, [allMatters]);
 
   const togglePin = (matterId: string) => {
     setPinnedIds(prev =>
@@ -150,9 +156,35 @@ const MatterQuickSelect = () => {
           })}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          No pinned matters yet. Add matters below for quick access.
-        </p>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            No pinned matters yet. Use one of these to start now:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {quickStartMatters.map((matter) => {
+              const isActive = activeEntry?.matter_id === matter.id;
+              return (
+                <Button
+                  key={matter.id}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  onClick={() =>
+                    actions.quickSwitch({
+                      id: matter.id,
+                      client_id: matter.client_id,
+                      name: matter.name,
+                    })
+                  }
+                  disabled={isActive}
+                  className="gap-1.5"
+                >
+                  {!isActive && <Play className="h-3 w-3" />}
+                  {formatMatterName(matter)}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Add matter button with search popover */}
