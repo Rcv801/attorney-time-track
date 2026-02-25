@@ -72,21 +72,17 @@
   }
 
   body {
-    @apply text-foreground antialiased;
-    background:
-      radial-gradient(circle at 12% -8%, hsl(225 75% 60% / 0.18), transparent 36%),
-      radial-gradient(circle at 90% 0%, hsl(196 72% 54% / 0.12), transparent 30%),
-      hsl(var(--background));
+    @apply bg-background text-foreground antialiased;
   }
 }
 
 @layer components {
   .app-shell {
-    @apply rounded-2xl border border-border/70 bg-card/75 backdrop-blur-xl shadow-[0_12px_40px_-18px_rgba(0,0,0,0.45)];
+    @apply rounded-2xl border border-border bg-card shadow-sm;
   }
 
   .premium-card {
-    @apply border border-border/70 bg-card/80 backdrop-blur-sm shadow-[0_8px_28px_-18px_rgba(0,0,0,0.4)] transition-all duration-200 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.45)];
+    @apply border border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md;
   }
 
   .section-title {
