@@ -32,11 +32,14 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
     <div className="flex h-full flex-col p-4">
       {/* Brand */}
       <div className={cn("mb-6 flex items-center gap-2 px-3", isCollapsed && "justify-center")}>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-          AT
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-indigo-400 text-primary-foreground font-bold text-sm shadow-md shadow-primary/30">
+          6M
         </div>
         {!isCollapsed && (
-          <span className="text-lg font-semibold tracking-tight">TimeTrack</span>
+          <div className="leading-tight">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">SixMin Legal</p>
+            <span className="text-base font-semibold tracking-tight">TimeTrack</span>
+          </div>
         )}
       </div>
 
@@ -53,8 +56,8 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
                   end={item.to === '/'}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
-                      isActive && 'bg-muted/50 text-foreground',
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground hover:bg-muted/40',
+                      isActive && 'bg-primary/15 text-foreground border border-primary/30 shadow-sm',
                       isCollapsed && 'justify-center px-2',
                     )
                   }

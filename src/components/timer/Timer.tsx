@@ -77,7 +77,7 @@ const Timer = () => {
 
   return (
     <>
-      <Card>
+      <Card className="premium-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
             {isRunning && (
@@ -98,17 +98,19 @@ const Timer = () => {
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          <div
-            className={cn(
-              "text-5xl font-mono font-bold text-center tabular-nums tracking-tight py-2",
-              isRunning && "text-green-600 dark:text-green-400",
-              isPaused && "text-yellow-600 dark:text-yellow-400 animate-pulse",
-            )}
-            role="timer"
-            aria-live="polite"
-            aria-label={`Timer: ${formatDuration(elapsed)}`}
-          >
-            {formatDuration(elapsed)}
+          <div className="rounded-xl border border-border/70 bg-background/45 px-4 py-5">
+            <div
+              className={cn(
+                "text-5xl font-mono font-bold text-center tabular-nums tracking-tight",
+                isRunning && "text-green-600 dark:text-green-400",
+                isPaused && "text-yellow-600 dark:text-yellow-400 animate-pulse",
+              )}
+              role="timer"
+              aria-live="polite"
+              aria-label={`Timer: ${formatDuration(elapsed)}`}
+            >
+              {formatDuration(elapsed)}
+            </div>
           </div>
           <div className="flex justify-center gap-3">
             <Button

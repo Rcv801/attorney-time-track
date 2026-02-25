@@ -48,16 +48,23 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          {new Date().toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </p>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="section-title mb-2">Practice Command Center</p>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        </div>
+        <div className="hidden md:flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          Tracking ready
+        </div>
       </div>
 
       {/* Stats */}
@@ -89,7 +96,7 @@ const Dashboard = () => {
 
       {/* Quick Start + Today's entries */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="premium-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Quick Start</CardTitle>
             <p className="text-sm text-muted-foreground">
@@ -100,7 +107,7 @@ const Dashboard = () => {
             <MatterQuickSelect />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="premium-card">
           <CardHeader>
             <CardTitle>Today's Entries</CardTitle>
           </CardHeader>
@@ -153,13 +160,15 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <Card>
+    <Card className="premium-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <div className="rounded-md border border-border/70 bg-background/50 p-1.5">
+          {icon}
+        </div>
       </CardHeader>
       <CardContent>
-        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-2xl font-semibold tracking-tight">{value}</p>
       </CardContent>
     </Card>
   );

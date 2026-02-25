@@ -25,7 +25,7 @@ const AppLayout = () => {
     <>
       <ResizablePanelGroup
         direction="horizontal"
-        className="h-screen w-full items-stretch"
+        className="h-screen w-full items-stretch p-3 lg:p-4"
       >
         <ResizablePanel
           defaultSize={20}
@@ -36,16 +36,16 @@ const AppLayout = () => {
           onCollapse={() => setIsCollapsed(true)}
           onExpand={() => setIsCollapsed(false)}
           className={cn(
-            'min-w-[50px] transition-all duration-300 ease-in-out',
+            'app-shell min-w-[50px] transition-all duration-300 ease-in-out',
             isCollapsed && 'min-w-[70px]'
           )}
         >
           <Sidebar isCollapsed={isCollapsed} />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={80} minSize={60}>
+        <ResizablePanel defaultSize={80} minSize={60} className="app-shell">
           <main className="h-full overflow-auto">
-            <div className="mx-auto max-w-7xl p-6 lg:p-8">
+            <div className="mx-auto max-w-7xl p-5 lg:p-8">
               <Outlet />
             </div>
           </main>
