@@ -101,7 +101,7 @@ const Timer = () => {
           <div className="rounded-xl border border-border/70 bg-background/45 px-4 py-5">
             <div
               className={cn(
-                "text-5xl font-mono font-bold text-center tabular-nums tracking-tight",
+                "text-4xl md:text-5xl font-mono font-bold text-center tabular-nums tracking-tight",
                 isRunning && "text-green-600 dark:text-green-400",
                 isPaused && "text-yellow-600 dark:text-yellow-400 animate-pulse",
               )}
@@ -112,14 +112,14 @@ const Timer = () => {
               {formatDuration(elapsed)}
             </div>
           </div>
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-2.5 md:gap-3">
             <Button
               size="icon"
               variant="outline"
               onClick={handleTogglePlay}
               disabled={isLoading}
               aria-label={isRunning ? "Pause timer" : isPaused ? "Resume timer" : "Start timer"}
-              className="h-12 w-12 rounded-full"
+              className="h-11 w-11 md:h-12 md:w-12 rounded-full"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -135,7 +135,7 @@ const Timer = () => {
               onClick={actions.stop}
               disabled={!activeEntry || isLoading}
               aria-label="Stop timer"
-              className="h-12 w-12 rounded-full"
+              className="h-11 w-11 md:h-12 md:w-12 rounded-full"
             >
               <Square className="h-5 w-5" />
             </Button>

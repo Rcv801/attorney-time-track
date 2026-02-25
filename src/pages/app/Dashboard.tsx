@@ -47,11 +47,11 @@ const Dashboard = () => {
   if (isLoading) return <LoadingSkeleton />;
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-end justify-between gap-4">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="section-title mb-2">Practice Command Center</p>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Dashboard</h1>
           <p className="text-muted-foreground mt-1">
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
@@ -68,7 +68,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Hours Today"
           value={formatBillableHours(roundToSixMinutes(totalSeconds))}
