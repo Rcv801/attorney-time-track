@@ -2,6 +2,7 @@ import {
   File,
   Home,
   Users,
+  Receipt,
   LogOut,
   ChevronRight,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ const navItems = [
   { to: '/', icon: Home, label: 'Dashboard' },
   { to: '/clients-matters', icon: Users, label: 'Clients & Matters' },
   { to: '/entries', icon: File, label: 'Entries' },
+  { to: '/invoices', icon: Receipt, label: 'Invoices' },
 ];
 
 export function Sidebar({ isCollapsed }: SidebarProps) {
