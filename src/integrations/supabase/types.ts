@@ -137,42 +137,184 @@ export type Database = {
       }
       invoices: {
         Row: {
+          amount_paid: number
+          balance_due: number
           client_id: string
           created_at: string
-          date_range_end: string
-          date_range_start: string
-          file_url: string | null
+          date_range_end: string | null
+          date_range_start: string | null
+          due_date: string
           id: string
-          invoice_name: string
+          invoice_number: string
+          matter_id: string | null
           notes: string | null
-          total_amount: number | null
+          paid_at: string | null
+          payment_link: string | null
+          payment_terms: string | null
+          pdf_url: string | null
+          sent_at: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          trust_applied: number
+          updated_at: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          amount_paid?: number
+          balance_due?: number
+          client_id: string
+          created_at?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          due_date?: string
+          id?: string
+          invoice_number: string
+          matter_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_terms?: string | null
+          pdf_url?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          trust_applied?: number
+          updated_at?: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          balance_due?: number
+          client_id?: string
+          created_at?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          matter_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_terms?: string | null
+          pdf_url?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          trust_applied?: number
+          updated_at?: string
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_matter_id_fkey"
+            columns: ["matter_id"]
+            isOneToOne: false
+            referencedRelation: "matters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trust_ledger: {
+        Row: {
+          amount: number
+          client_id: string
+          correction_of: string | null
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string | null
+          matter_id: string
+          payor_payee: string | null
+          reconciled: boolean
+          reconciled_at: string | null
+          reconciled_by: string | null
+          reference_number: string | null
+          running_balance: number
+          transaction_date: string
+          transaction_type: string
           user_id: string
         }
         Insert: {
+          amount: number
           client_id: string
           created_at?: string
-          date_range_end: string
-          date_range_start: string
-          file_url?: string | null
+          correction_of?: string | null
+          description: string
           id?: string
-          invoice_name: string
-          notes?: string | null
-          total_amount?: number | null
+          invoice_id?: string | null
+          matter_id: string
+          payor_payee?: string | null
+          reconciled?: boolean
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          reference_number?: string | null
+          running_balance: number
+          transaction_date?: string
+          transaction_type: string
           user_id: string
         }
         Update: {
+          amount?: number
           client_id?: string
           created_at?: string
-          date_range_end?: string
-          date_range_start?: string
-          file_url?: string | null
+          correction_of?: string | null
+          description?: string
           id?: string
-          invoice_name?: string
-          notes?: string | null
-          total_amount?: number | null
+          invoice_id?: string | null
+          matter_id?: string
+          payor_payee?: string | null
+          reconciled?: boolean
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          reference_number?: string | null
+          running_balance?: number
+          transaction_date?: string
+          transaction_type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trust_ledger_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trust_ledger_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trust_ledger_matter_id_fkey"
+            columns: ["matter_id"]
+            isOneToOne: false
+            referencedRelation: "matters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       matters: {
         Row: {
@@ -257,12 +399,130 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      invoice_summary: {
+        Row: {
+          amount_paid: number | null
+          balance_due: number | null
+          client_id: string | null
+          client_name: string | null
+          created_at: string | null
+          date_range_end: string | null
+          date_range_start: string | null
+          due_date: string | null
+          id: string | null
+          invoice_number: string | null
+          line_item_count: number | null
+          matter_id: string | null
+          matter_name: string | null
+          notes: string | null
+          paid_at: string | null
+          payment_count: number | null
+          payment_link: string | null
+          payment_terms: string | null
+          pdf_url: string | null
+          sent_at: string | null
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          tax_rate: number | null
+          total: number | null
+          trust_applied: number | null
+          updated_at: string | null
+          user_id: string | null
+          viewed_at: string | null
+        }
+        Relationships: []
+      }
+      trust_balance_by_client: {
+        Row: {
+          client_id: string | null
+          matter_count: number | null
+          total_trust_balance: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      trust_balance_by_matter: {
+        Row: {
+          client_id: string | null
+          current_balance: number | null
+          last_transaction_at: string | null
+          last_transaction_date: string | null
+          matter_id: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      trust_activity_summary: {
+        Row: {
+          client_id: string | null
+          matter_id: string | null
+          month: string | null
+          total_amount: number | null
+          transaction_count: number | null
+          transaction_type: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      unbilled_entries: {
+        Row: {
+          archived: boolean | null
+          billed: boolean | null
+          billed_hours: number | null
+          client_id: string | null
+          client_name: string | null
+          client_rate: number | null
+          created_at: string | null
+          duration_sec: number | null
+          effective_rate: number | null
+          end_at: string | null
+          id: string | null
+          invoice_id: string | null
+          matter_id: string | null
+          matter_name: string | null
+          matter_number: string | null
+          matter_rate: number | null
+          notes: string | null
+          paused_at: string | null
+          start_at: string | null
+          total_paused_seconds: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      apply_trust_to_invoice: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_invoice_id: string
+          p_reference?: string
+          p_transaction_date?: string
+          p_user_id: string
+        }
+        Returns: Database["public"]["Tables"]["trust_ledger"]["Row"]
+      }
       migrate_existing_entries_to_matters: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      record_trust_transaction: {
+        Args: {
+          p_amount: number
+          p_client_id: string
+          p_correction_of?: string
+          p_description: string
+          p_invoice_id?: string
+          p_matter_id: string
+          p_payor_payee?: string
+          p_reference?: string
+          p_transaction_date?: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: Database["public"]["Tables"]["trust_ledger"]["Row"]
       }
     }
     Enums: {

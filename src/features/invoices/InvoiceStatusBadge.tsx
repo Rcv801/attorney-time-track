@@ -8,9 +8,12 @@ interface InvoiceStatusBadgeProps {
 const LABELS: Record<InvoiceStatus, string> = {
   draft: "Draft",
   sent: "Sent",
+  viewed: "Viewed",
   paid: "Paid",
-  partially_paid: "Partially Paid",
+  partial: "Partially Paid",
   overdue: "Overdue",
+  void: "Void",
+  written_off: "Written Off",
 };
 
 export default function InvoiceStatusBadge({ status }: InvoiceStatusBadgeProps) {
@@ -22,8 +25,16 @@ export default function InvoiceStatusBadge({ status }: InvoiceStatusBadgeProps) 
     return <Badge variant="destructive">{LABELS[status]}</Badge>;
   }
 
-  if (status === "partially_paid") {
+  if (status === "partial") {
     return <Badge className="bg-amber-500 text-white hover:bg-amber-500">{LABELS[status]}</Badge>;
+  }
+
+  if (status === "viewed") {
+    return <Badge className="bg-sky-600 text-white hover:bg-sky-600">{LABELS[status]}</Badge>;
+  }
+
+  if (status === "void" || status === "written_off") {
+    return <Badge variant="outline">{LABELS[status]}</Badge>;
   }
 
   return <Badge variant="secondary">{LABELS[status]}</Badge>;

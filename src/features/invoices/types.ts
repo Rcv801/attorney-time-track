@@ -1,4 +1,12 @@
-export type InvoiceStatus = "draft" | "sent" | "paid" | "partially_paid" | "overdue";
+export type InvoiceStatus =
+  | "draft"
+  | "sent"
+  | "viewed"
+  | "paid"
+  | "partial"
+  | "overdue"
+  | "void"
+  | "written_off";
 
 export interface InvoiceListItem {
   id: string;
@@ -9,7 +17,30 @@ export interface InvoiceListItem {
   dueDate: string;
   totalAmountCents: number;
   paidAmountCents: number;
+  balanceDueCents: number;
   status: InvoiceStatus;
+}
+
+export interface InvoiceLineItem {
+  id: string;
+  date: string;
+  description: string;
+  lineType: string;
+  matterName?: string | null;
+  quantity?: number | null;
+  rateCents?: number | null;
+  amountCents: number;
+}
+
+export interface InvoicePayment {
+  id: string;
+  amountCents: number;
+  paymentDate: string;
+  paymentMethod: string;
+  referenceNumber?: string | null;
+  status: string;
+  notes?: string | null;
+  createdAt: string;
 }
 
 export interface InvoiceBuilderClientOption {
@@ -64,5 +95,11 @@ export interface InvoiceDetail {
   taxCents: number;
   totalCents: number;
   amountPaidCents: number;
+  balanceDueCents: number;
+  trustAppliedCents: number;
+  paymentTerms?: string | null;
+  paymentLink?: string | null;
   notes?: string;
+  lineItems: InvoiceLineItem[];
+  payments: InvoicePayment[];
 }

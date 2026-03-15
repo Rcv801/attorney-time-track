@@ -19,6 +19,7 @@ import { Users } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { getEffectiveRate } from "@/lib/billing";
+import MatterTrustPanel from "@/features/trust/MatterTrustPanel";
 
 type Client = Tables<"clients">;
 type Matter = Tables<"matters">;
@@ -309,29 +310,40 @@ const ClientsAndMatters = () => {
                           </td>
                         </tr>
                         {/* Expanded matters inline */}
-                        {isExpanded && counts?.matters.map(matter => (
-                          <tr key={matter.id} className="h-9 border-b border-border/30 bg-muted/20">
-                            <td className="px-3"></td>
-                            <td className="px-3 pl-8" colSpan={2}>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground font-mono">
-                                  {matter.matter_number ? `#${matter.matter_number}` : ""}
-                                </span>
-                                <span className="text-sm">{matter.name}</span>
-                                <Badge
-                                  variant={matter.status === "active" ? "default" : "secondary"}
-                                  className="text-[10px] px-1.5 py-0 capitalize"
-                                >
-                                  {matter.status}
-                                </Badge>
-                              </div>
-                            </td>
-                            <td className="px-3 text-sm tabular-nums text-muted-foreground">
-                              ${getEffectiveRate(matter.hourly_rate, client.hourly_rate)}/hr
-                            </td>
-                            <td className="px-3 text-xs text-muted-foreground">{formatDate(matter.updated_at)}</td>
-                            <td></td>
-                          </tr>
+                        {isExpanded && counts?.matters.map((matter) => (
+                          <React.Fragment key={matter.id}>
+                            <tr className="h-9 border-b border-border/30 bg-muted/20">
+                              <td className="px-3"></td>
+                              <td className="px-3 pl-8" colSpan={2}>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs text-muted-foreground font-mono">
+                                    {matter.matter_number ? `#${matter.matter_number}` : ""}
+                                  </span>
+                                  <span className="text-sm">{matter.name}</span>
+                                  <Badge
+                                    variant={matter.status === "active" ? "default" : "secondary"}
+                                    className="text-[10px] px-1.5 py-0 capitalize"
+                                  >
+                                    {matter.status}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 tabular-nums">
+                                    Trust ${(matter.trust_balance ?? 0).toFixed(2)}
+                                  </Badge>
+                                </div>
+                              </td>
+                              <td className="px-3 text-sm tabular-nums text-muted-foreground">
+                                ${getEffectiveRate(matter.hourly_rate, client.hourly_rate)}/hr
+                              </td>
+                              <td className="px-3 text-xs text-muted-foreground">{formatDate(matter.updated_at)}</td>
+                              <td></td>
+                            </tr>
+                            <tr className="border-b border-border/30 bg-muted/10">
+                              <td></td>
+                              <td colSpan={5} className="px-3 pb-4 pl-10 pr-3 pt-2">
+                                <MatterTrustPanel client={client} matter={matter} />
+                              </td>
+                            </tr>
+                          </React.Fragment>
                         ))}
                       </React.Fragment>
                     );

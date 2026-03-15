@@ -3,15 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EmptyState from "@/components/shared/EmptyState";
+import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
 import { useInvoicesQuery } from "@/features/invoices/hooks";
 import InvoiceStatusBadge from "@/features/invoices/InvoiceStatusBadge";
 import { formatCurrencyFromCents } from "@/features/invoices/format";
 import InvoiceBuilder from "@/features/invoices/InvoiceBuilder";
 
 const Invoices = () => {
-  const { data: invoices } = useInvoicesQuery();
+  const { data: invoices = [], isLoading, isError, error } = useInvoicesQuery();
 
   const hasInvoices = invoices.length > 0;
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
@@ -28,7 +33,7 @@ const Invoices = () => {
       <Card>
         <CardHeader>
           <CardTitle>Invoice List</CardTitle>
-          <CardDescription>Placeholder table scaffold for upcoming Supabase-powered data.</CardDescription>
+          <CardDescription>Live invoice balances, status, and receivables progress.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <EmptyState
@@ -36,7 +41,12 @@ const Invoices = () => {
             description="Email/PDF delivery actions and Stripe payment links are part of the next integration pass."
           />
 
-          {hasInvoices ? (
+          {isError ? (
+            <EmptyState
+              title="Could not load invoices"
+              description={error instanceof Error ? error.message : "Refresh and try again."}
+            />
+          ) : hasInvoices ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -45,7 +55,8 @@ const Invoices = () => {
                   <TableHead>Matter</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Due Date</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Outstanding</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -62,6 +73,7 @@ const Invoices = () => {
                       <InvoiceStatusBadge status={invoice.status} />
                     </TableCell>
                     <TableCell>{invoice.dueDate}</TableCell>
+                    <TableCell className="text-right">{formatCurrencyFromCents(invoice.balanceDueCents)}</TableCell>
                     <TableCell className="text-right">{formatCurrencyFromCents(invoice.totalAmountCents)}</TableCell>
                   </TableRow>
                 ))}
