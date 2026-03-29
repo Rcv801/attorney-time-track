@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import ErrorBoundary from './components/shared/ErrorBoundary'
 import AppLayout from './components/layout/AppLayout'
 import Dashboard from './pages/app/Dashboard'
 import Entries from './pages/app/Entries'
@@ -6,6 +7,8 @@ import ClientsAndMatters from './pages/app/ClientsAndMatters'
 import Invoices from './pages/app/Invoices'
 import InvoiceBuilderPage from './pages/app/InvoiceBuilderPage'
 import InvoiceDetail from './pages/app/InvoiceDetail'
+import Reports from './pages/app/Reports'
+import Settings from './pages/app/Settings'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import RequireAuth from './components/RequireAuth'
@@ -13,7 +16,7 @@ import { Toaster } from '@/components/ui/sonner'
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
@@ -30,11 +33,13 @@ function App() {
           <Route path="invoices" element={<Invoices />} />
           <Route path="invoices/new" element={<InvoiceBuilderPage />} />
           <Route path="invoices/:invoiceId" element={<InvoiceDetail />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
-    </>
+    </ErrorBoundary>
   )
 }
 

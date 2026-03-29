@@ -16,6 +16,7 @@ import { useEffect } from "react";
 
 const createSchema = z.object({
   name: z.string().min(2, "Client name must be at least 2 characters."),
+  email: z.string().email("Enter a valid email address.").or(z.literal("")).optional(),
   first_matter_name: z.string().min(2, "Matter name must be at least 2 characters."),
   hourly_rate: z.coerce.number().min(0, "Rate must be 0 or more."),
   notes: z.string().optional(),
@@ -23,6 +24,7 @@ const createSchema = z.object({
 
 const editSchema = z.object({
   name: z.string().min(2, "Client name must be at least 2 characters."),
+  email: z.string().email("Enter a valid email address.").or(z.literal("")).optional(),
   hourly_rate: z.coerce.number().min(0, "Rate must be 0 or more."),
   notes: z.string().optional(),
 });
@@ -50,6 +52,7 @@ export function ClientForm({
     resolver: zodResolver(isCreate ? createSchema : editSchema),
     defaultValues: {
       name: "",
+      email: "",
       first_matter_name: "",
       hourly_rate: 0,
       notes: "",
@@ -77,6 +80,19 @@ export function ClientForm({
               <FormLabel>Name</FormLabel>
               <FormControl>
                 <Input placeholder="Acme Inc." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="client@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

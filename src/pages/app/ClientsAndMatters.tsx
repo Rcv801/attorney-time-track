@@ -88,12 +88,12 @@ const ClientsAndMatters = () => {
     mutationFn: async (vars: ClientFormValues) => {
       if (!user) throw new Error("Not authenticated");
       
-      const { first_matter_name, ...clientData } = vars;
+      const { first_matter_name, email, ...clientData } = vars;
 
       // 1. Create the client
       const { data: newClient, error: clientError } = await supabase
         .from("clients")
-        .insert({ ...clientData, user_id: user.id })
+        .insert({ ...clientData, email: email || null, user_id: user.id })
         .select()
         .single();
       
@@ -125,8 +125,8 @@ const ClientsAndMatters = () => {
 
   const updateClient = useMutation({
     mutationFn: async (vars: ClientEditFormValues & { id: string }) => {
-      const { id, first_matter_name: _unused, ...data } = vars as ClientFormValues & { id: string };
-      const { error } = await supabase.from("clients").update(data).eq("id", id);
+      const { id, first_matter_name: _unused, email, ...data } = vars as ClientFormValues & { id: string };
+      const { error } = await supabase.from("clients").update({ ...data, email: email || null }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); toast({ title: "Client updated" }); setEditClient(null); },
@@ -377,7 +377,7 @@ const ClientsAndMatters = () => {
         {editClient && (
           <ClientForm
             mode="edit"
-            initialValues={editClient}
+            initialValues={{ ...editClient, email: editClient.email ?? "" }}
             onSubmit={(data) => updateClient.mutate({ ...data, id: editClient.id })}
             isSubmitting={updateClient.isPending}
           />

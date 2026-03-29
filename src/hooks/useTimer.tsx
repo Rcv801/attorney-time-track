@@ -45,12 +45,18 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   });
 
   const { data: activeEntry, isLoading: isLoadingActive } = useQuery({
-    queryKey: ["active-entry"],
+    queryKey: ["active-entry", user?.id],
+    enabled: !!user,
     queryFn: async () => {
+      if (!user) return null;
+
       const { data, error } = await supabase
         .from("entries")
         .select("*, matter:matters(*, client:clients(*))")
+        .eq("user_id", user.id)
         .is("end_at", null)
+        .order("start_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
       return data as ActiveEntry | null;
@@ -83,21 +89,47 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const startTimer = useMutation({
     mutationFn: async (vars: { matterId: string; clientId: string }) => {
       if (!user) throw new Error("Not authenticated");
+
+      const nowIso = new Date().toISOString();
+
+      const { error: cleanupError } = await supabase
+        .from("entries")
+        .update({ end_at: nowIso, paused_at: null })
+        .eq("user_id", user.id)
+        .is("end_at", null);
+
+      if (cleanupError) throw cleanupError;
+
       const { error } = await supabase.from("entries").insert({
         matter_id: vars.matterId,
         client_id: vars.clientId,
-        start_at: new Date().toISOString(),
+        start_at: nowIso,
         user_id: user.id,
       });
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-      qc.invalidateQueries({ queryKey: ["entries-today"] });
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["active-entry", user?.id] }),
+        qc.invalidateQueries({ queryKey: ["entries-today"] }),
+        qc.invalidateQueries({ queryKey: ["entries"] }),
+      ]);
       setQuickSwitchState({ show: false, nextMatterId: null, stoppedMatterName: "" });
     },
-    onError: (e: any) => {
-      toast({ title: "Cannot start timer", description: e.message, variant: "destructive" });
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      const isDuplicate = message.includes("single_active_entry") || message.includes("only one active");
+      toast({
+        title: isDuplicate ? "Timer already running" : "Cannot start timer",
+        description: isDuplicate
+          ? "Stop your current timer before starting a new one, or use quick-switch."
+          : message,
+        variant: "destructive",
+      });
+      // Refresh active entry state so the UI stays in sync
+      if (isDuplicate) {
+        qc.invalidateQueries({ queryKey: ["active-entry", user?.id] });
+      }
     },
   });
 
@@ -116,13 +148,20 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.from("entries").update(updateData).eq("id", vars.entryId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-entry"] });
-      qc.invalidateQueries({ queryKey: ["entries-today"] });
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["active-entry", user?.id] }),
+        qc.invalidateQueries({ queryKey: ["entries-today"] }),
+        qc.invalidateQueries({ queryKey: ["entries"] }),
+      ]);
       setQuickSwitchState({ show: false, nextMatterId: null, stoppedMatterName: "" });
     },
-    onError: (e: any) => {
-      toast({ title: "Cannot stop timer", description: e.message, variant: "destructive" });
+    onError: (error: unknown) => {
+      toast({
+        title: "Cannot stop timer",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
     },
   });
 
@@ -132,8 +171,13 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.from("entries").update({ paused_at: new Date().toISOString() }).eq("id", activeEntry.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["active-entry"] }),
-    onError: (e: any) => toast({ title: "Cannot pause", description: e.message, variant: "destructive" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["active-entry", user?.id] }),
+    onError: (error: unknown) =>
+      toast({
+        title: "Cannot pause",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      }),
   });
 
   const resumeTimer = useMutation({
@@ -144,8 +188,13 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.from("entries").update({ paused_at: null, total_paused_seconds: newTotalPaused }).eq("id", activeEntry.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["active-entry"] }),
-    onError: (e: any) => toast({ title: "Cannot resume", description: e.message, variant: "destructive" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["active-entry", user?.id] }),
+    onError: (error: unknown) =>
+      toast({
+        title: "Cannot resume",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      }),
   });
 
   const handleStart = useCallback((matterId: string, clientId: string) => {
@@ -186,13 +235,15 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       {
         onSuccess: () => {
           if (quickSwitchState.nextMatterId) {
-            const nextMatter = (qc.getQueryData(["matters"]) as Matter[] | undefined)?.find(m => m.id === quickSwitchState.nextMatterId);
+            const nextMatter = (qc.getQueryData(["matters-all-active"]) as Matter[] | undefined)?.find(
+              (matter) => matter.id === quickSwitchState.nextMatterId,
+            );
             if (nextMatter) {
               startTimer.mutate({ matterId: nextMatter.id, clientId: nextMatter.client_id });
             }
           }
         },
-      }
+      },
     );
   }, [activeEntry, quickSwitchState.nextMatterId, stopTimer, startTimer, qc]);
 
@@ -202,26 +253,33 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   const isRunning = !!activeEntry && !activeEntry.paused_at;
   const isPaused = !!activeEntry?.paused_at;
-  const isLoading = isLoadingActive || startTimer.isPending || stopTimer.isPending || pauseTimer.isPending || resumeTimer.isPending;
+  const isLoading =
+    isLoadingActive ||
+    startTimer.isPending ||
+    stopTimer.isPending ||
+    pauseTimer.isPending ||
+    resumeTimer.isPending;
 
   return (
-    <TimerContext.Provider value={{
-      activeEntry,
-      elapsed,
-      isRunning,
-      isPaused,
-      isLoading,
-      quickSwitchState,
-      actions: {
-        start: handleStart,
-        stop: handleStop,
-        pause: handlePause,
-        resume: handleResume,
-        quickSwitch: handleQuickSwitch,
-        submitQuickAction,
-        cancelQuickAction,
-      },
-    }}>
+    <TimerContext.Provider
+      value={{
+        activeEntry,
+        elapsed,
+        isRunning,
+        isPaused,
+        isLoading,
+        quickSwitchState,
+        actions: {
+          start: handleStart,
+          stop: handleStop,
+          pause: handlePause,
+          resume: handleResume,
+          quickSwitch: handleQuickSwitch,
+          submitQuickAction,
+          cancelQuickAction,
+        },
+      }}
+    >
       {children}
     </TimerContext.Provider>
   );
