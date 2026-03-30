@@ -25,6 +25,11 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<"dark" | "light" | "system">(() => {
+    // Force light mode until dark theme is properly designed
+    if (defaultTheme === "light") {
+      localStorage.setItem(storageKey, "light");
+      return "light";
+    }
     const storedTheme = localStorage.getItem(storageKey);
     return (storedTheme as "dark" | "light" | "system") || defaultTheme;
   });
