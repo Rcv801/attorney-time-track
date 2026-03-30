@@ -27,14 +27,14 @@ const AppLayout = () => {
     <>
       {/* Mobile / tablet layout */}
       <div className="flex h-screen w-full flex-col lg:hidden">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-card px-4">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-gradient-to-r from-blue-900/90 to-slate-900/90 px-4 shadow-sm">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-xs font-semibold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-xs font-bold text-slate-900">
               6M
             </div>
             <div className="leading-tight">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">SixMin Legal</p>
-              <p className="text-sm font-semibold">TimeTrack</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-slate-300 font-semibold">SixMin Legal</p>
+              <p className="text-sm font-bold text-white">TimeTrack</p>
             </div>
           </div>
 
@@ -50,7 +50,7 @@ const AppLayout = () => {
           </Sheet>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-auto bg-background">
+        <main className="min-h-0 flex-1 overflow-auto bg-gradient-to-br from-amber-50/50 to-white">
           <div className="mx-auto w-full max-w-7xl p-4 md:p-6">
             <Outlet />
           </div>
@@ -72,15 +72,15 @@ const AppLayout = () => {
             onCollapse={() => setIsCollapsed(true)}
             onExpand={() => setIsCollapsed(false)}
             className={cn(
-              'min-w-[50px] border-r border-border bg-card transition-all duration-300 ease-in-out',
+              'min-w-[50px] sidebar-gradient transition-all duration-300 ease-in-out shadow-lg',
               isCollapsed && 'min-w-[70px]'
             )}
           >
             <Sidebar isCollapsed={isCollapsed} />
           </ResizablePanel>
-          <ResizableHandle withHandle />
+          <ResizableHandle withHandle className="bg-border hover:bg-border/80" />
           <ResizablePanel defaultSize={80} minSize={60}>
-            <main className="h-full overflow-auto bg-background">
+            <main className="h-full overflow-auto bg-gradient-to-br from-amber-50/50 to-white">
               <div className="mx-auto max-w-7xl p-6 lg:p-8">
                 <Outlet />
               </div>

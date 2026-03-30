@@ -14,6 +14,7 @@ import ManualEntryDialog from "@/components/timer/ManualEntryDialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 type Entry = Tables<"entries"> & { matter: Tables<"matters"> & { client: Tables<"clients"> } };
 
@@ -113,9 +114,9 @@ const Dashboard = () => {
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="section-title mb-2">Practice Command Center</p>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="section-title mb-2 text-slate-600">Practice Command Center</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+          <p className="text-slate-600 mt-2 text-sm font-medium">
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               month: "long",
@@ -124,34 +125,35 @@ const Dashboard = () => {
             })}
           </p>
         </div>
-        <div className="hidden md:flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="hidden md:flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50/80 px-4 py-2 text-xs text-amber-900 font-medium shadow-sm">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
           Tracking ready
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Billable Target"
           value={`${todayBillableHours.toFixed(1)} / ${billableTarget.toFixed(1)} hrs`}
-          icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+          icon={<TrendingUp className="h-4 w-4 text-amber-600" />}
           progress={billableProgress}
+          featured
         />
         <StatCard
           title="This Week"
           value={formatBillableHours(weekBillableHours)}
-          icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+          icon={<Clock className="h-4 w-4 text-blue-600" />}
         />
         <StatCard
           title="Billable Amount"
           value={`$${totalBillable.toFixed(2)}`}
-          icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+          icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
         />
         <StatCard
           title="Entries Today"
           value={String(completedEntries)}
-          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          icon={<FileText className="h-4 w-4 text-slate-600" />}
         />
       </div>
 
@@ -160,31 +162,31 @@ const Dashboard = () => {
 
       {/* Quick Start + Today's entries */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="premium-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Quick Start</CardTitle>
-            <p className="text-sm text-muted-foreground">
+        <Card className="premium-card rounded-xl border border-slate-200 shadow-md">
+          <CardHeader className="pb-3 border-b border-slate-100">
+            <CardTitle className="text-lg font-bold text-slate-900">Quick Start</CardTitle>
+            <p className="text-sm text-slate-600 mt-1">
               Pin your most-used matters for one-click time tracking.
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <MatterQuickSelect />
           </CardContent>
         </Card>
-        <Card className="premium-card">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Today's Entries</CardTitle>
+        <Card className="premium-card rounded-xl border border-slate-200 shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
+            <CardTitle className="font-bold text-slate-900">Today's Entries</CardTitle>
             <Button
               variant="outline"
               size="sm"
-              className="gap-2"
+              className="gap-2 bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100"
               onClick={() => setManualEntryOpen(true)}
             >
               <Plus className="h-4 w-4" />
               Add Entry
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             {entries && entries.filter(e => e.end_at).length > 0 ? (
               <ul className="space-y-3">
                 {entries
@@ -201,16 +203,16 @@ const Dashboard = () => {
                     return (
                       <li
                         key={entry.id}
-                        className="flex flex-col rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                        className="flex flex-col rounded-lg border border-slate-200 bg-slate-50/40 p-3 transition-all duration-200 hover:bg-slate-100/60 hover:border-slate-300 hover:shadow-sm"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="font-medium truncate">{displayName}</p>
+                            <p className="font-semibold text-slate-900 truncate">{displayName}</p>
                             {isEditing ? (
                               <div className="mt-2 space-y-2">
                                 <div className="relative">
                                   <textarea
-                                    className="w-full rounded border bg-background p-2 text-sm"
+                                    className="w-full rounded-lg border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
                                     value={editingNotes}
                                     onChange={(e) => setEditingNotes(e.target.value)}
                                     placeholder="Enter notes..."
@@ -252,15 +254,15 @@ const Dashboard = () => {
                                 </div>
                               </div>
                             ) : (
-                              <p className="text-sm text-muted-foreground truncate">
+                              <p className="text-sm text-slate-600 truncate">
                                 {entry.notes || "No notes"}
                               </p>
                             )}
                           </div>
                           <div className="flex flex-col items-end gap-2 shrink-0">
-                            <div className="font-mono text-sm tabular-nums">
-                              <div>{formatDuration(secs)}</div>
-                              <div className="text-xs text-muted-foreground">
+                            <div className="font-mono text-sm tabular-nums text-slate-900">
+                              <div className="font-semibold">{formatDuration(secs)}</div>
+                              <div className="text-xs text-slate-600 font-medium">
                                 ${billAmount.toFixed(2)}
                               </div>
                             </div>
@@ -283,7 +285,7 @@ const Dashboard = () => {
                   })}
               </ul>
             ) : (
-              <p className="text-center text-muted-foreground py-8">
+              <p className="text-center text-slate-500 py-8 text-sm">
                 No entries yet today. Start a timer to begin tracking.
               </p>
             )}
@@ -301,24 +303,38 @@ function StatCard({
   value,
   icon,
   progress,
+  featured,
 }: {
   title: string;
   value: string;
   icon: React.ReactNode;
   progress?: number;
+  featured?: boolean;
 }) {
   return (
-    <Card className="premium-card">
+    <Card className={cn(
+      "premium-card rounded-xl",
+      featured && "border-2 border-amber-200 bg-gradient-to-br from-amber-50/80 to-white shadow-md"
+    )}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <div className="rounded-md border border-border/70 bg-background/50 p-1.5">
+        <CardTitle className="text-sm font-semibold text-slate-600">{title}</CardTitle>
+        <div className={cn(
+          "rounded-lg p-2",
+          featured ? "bg-amber-100" : "bg-slate-100"
+        )}>
           {icon}
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <p className="text-2xl font-semibold tracking-tight">{value}</p>
+      <CardContent className="space-y-3">
+        <p className={cn(
+          "font-bold tracking-tight",
+          featured ? "text-3xl text-slate-900" : "text-2xl text-slate-900"
+        )}>{value}</p>
         {progress !== undefined && (
-          <Progress value={progress} className="h-2" />
+          <div className="space-y-1.5">
+            <Progress value={progress} className="h-2.5 bg-amber-100" />
+            <p className="text-xs text-slate-500 font-medium">{Math.round(progress)}% of daily target</p>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -83,10 +83,22 @@ const Login = () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        shouldCreateUser: false,
+      },
     });
     if (error) {
-      setError(error.message);
+      const lower = error.message.toLowerCase();
+      if (
+        lower.includes("signups not allowed for otp") ||
+        lower.includes("should be registered") ||
+        lower.includes("user not found")
+      ) {
+        setError("No account exists for that email. Use Sign Up first.");
+      } else {
+        setError(error.message);
+      }
     } else {
       setMessage("Magic link sent! Check your email.");
     }
@@ -102,14 +114,24 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-            AT
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+      <div className="w-full max-w-sm space-y-6">
+        {/* Brand Logo Section */}
+        <div className="text-center space-y-2">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg">
+            <span className="text-2xl font-bold text-slate-900">6M</span>
           </div>
-          <CardTitle className="text-xl">TimeTrack</CardTitle>
-        </CardHeader>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold text-white tracking-tight">SixMin Legal</h1>
+            <p className="text-sm text-slate-300">Legal time tracking, simplified.</p>
+          </div>
+        </div>
+
+        {/* Card */}
+        <Card className="border border-slate-700 bg-white/95 shadow-2xl rounded-2xl">
+          <CardHeader className="text-center pb-3">
+            <CardTitle className="text-2xl text-slate-900">TimeTrack</CardTitle>
+          </CardHeader>
         <CardContent>
           {error && (
             <Alert variant="destructive" className="mb-4">
@@ -165,7 +187,7 @@ const Login = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signin-password">Password</Label>
-                    <Input id="signin-password" type="password" value={email ? password : password} onChange={(e) => setPassword(e.target.value)} required />
+                    <Input id="signin-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -201,6 +223,7 @@ const Login = () => {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
