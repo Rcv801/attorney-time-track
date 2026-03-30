@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Warm off-white/cream background */
-    --background: 30 25% 98%;
+    --background: 40 33% 97%;
     /* Deep warm charcoal foreground */
     --foreground: 30 20% 15%;
 
@@ -17,69 +17,51 @@
     --popover: 0 0% 100%;
     --popover-foreground: 30 20% 15%;
 
-    /* Rich deep navy-teal primary */
-    --primary: 200 60% 22%;
-    --primary-foreground: 30 25% 98%;
+    /* Rich deep navy primary */
+    --primary: 215 50% 23%;
+    --primary-foreground: 40 33% 97%;
 
     /* Warm secondary */
-    --secondary: 30 40% 90%;
+    --secondary: 35 40% 92%;
     --secondary-foreground: 30 20% 15%;
 
     /* Warm gray muted tones */
-    --muted: 30 30% 92%;
+    --muted: 35 25% 93%;
     --muted-foreground: 30 15% 45%;
 
     /* Warm amber/gold accent */
-    --accent: 38 90% 55%;
+    --accent: 38 92% 50%;
     --accent-foreground: 30 20% 15%;
 
-    /* Keep green but warmer */
+    /* Destructive red */
     --destructive: 0 72% 52%;
-    --destructive-foreground: 30 25% 98%;
+    --destructive-foreground: 40 33% 97%;
 
     /* Soft warm gray borders */
-    --border: 30 25% 87%;
-    --input: 30 25% 87%;
-    --ring: 200 60% 32%;
+    --border: 35 20% 88%;
+    --input: 35 20% 88%;
+    --ring: 215 50% 32%;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    /* Dark warm background */
     --background: 30 35% 10%;
-    /* Light cream foreground */
     --foreground: 30 20% 95%;
-
-    /* Dark warm cards */
     --card: 200 45% 14%;
     --card-foreground: 30 20% 95%;
-
-    /* Dark warm popover */
     --popover: 200 45% 14%;
     --popover-foreground: 30 20% 95%;
-
-    /* Rich primary remains similar */
     --primary: 200 60% 45%;
     --primary-foreground: 30 35% 10%;
-
-    /* Warm dark secondary */
     --secondary: 200 40% 20%;
     --secondary-foreground: 30 20% 95%;
-
-    /* Warm dark muted */
     --muted: 200 35% 18%;
     --muted-foreground: 30 20% 75%;
-
-    /* Warm gold accent */
     --accent: 38 85% 60%;
     --accent-foreground: 30 35% 10%;
-
-    /* Warm destructive */
     --destructive: 0 65% 45%;
     --destructive-foreground: 30 20% 95%;
-
-    /* Warm dark borders */
     --border: 200 40% 20%;
     --input: 200 40% 20%;
     --ring: 200 60% 45%;
@@ -93,43 +75,297 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Better heading defaults */
+  h1, h2, h3, h4 {
+    letter-spacing: -0.025em;
   }
 }
 
 @layer components {
+  /* ═══════════════════════════════════════════
+     PREMIUM CARD SYSTEM
+     ═══════════════════════════════════════════ */
+
   .app-shell {
     @apply rounded-2xl border border-border bg-card shadow-sm;
   }
 
   .premium-card {
-    @apply rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:shadow-lg hover:border-border/60 hover:-translate-y-0.5;
+    @apply rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-all duration-300;
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 
+  .premium-card:hover {
+    @apply shadow-[0_4px_16px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.04)];
+    border-color: rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  /* Featured card with gold accent */
+  .premium-card-featured {
+    @apply rounded-xl bg-white transition-all duration-300;
+    border: 1.5px solid hsl(38 60% 78%);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 4px 16px rgba(0, 0, 0, 0.03),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    background: linear-gradient(135deg, hsl(40 80% 97%) 0%, hsl(0 0% 100%) 60%);
+  }
+
+  .premium-card-featured:hover {
+    border-color: hsl(38 70% 65%);
+    box-shadow:
+      0 4px 20px rgba(180, 130, 40, 0.1),
+      0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  /* ═══════════════════════════════════════════
+     STAT CARDS
+     ═══════════════════════════════════════════ */
+  .stat-card {
+    @apply rounded-xl bg-white p-5 transition-all duration-300;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .stat-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .stat-card-featured {
+    @apply rounded-xl p-5 transition-all duration-300;
+    border: 1.5px solid hsl(38 60% 78%);
+    background: linear-gradient(135deg, hsl(40 80% 97%) 0%, hsl(0 0% 100%) 60%);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 4px 16px rgba(180, 130, 40, 0.06);
+  }
+
+  .stat-card-featured:hover {
+    box-shadow: 0 4px 20px rgba(180, 130, 40, 0.12);
+  }
+
+  /* ═══════════════════════════════════════════
+     TYPOGRAPHY
+     ═══════════════════════════════════════════ */
   .section-title {
-    @apply text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground;
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400;
   }
 
-  .accent-glow {
-    @apply text-amber-500 dark:text-amber-400;
+  .page-title {
+    @apply text-[2rem] font-extrabold tracking-tight text-slate-900 leading-tight;
   }
 
-  .sidebar-active-bg {
-    @apply bg-amber-50/40 dark:bg-amber-900/20 border-l-2 border-amber-500 pl-2.5;
+  .page-subtitle {
+    @apply text-[15px] text-slate-500 font-medium mt-1;
   }
 
-  /* Warm gradient for sidebar */
+  /* ═══════════════════════════════════════════
+     SIDEBAR
+     ═══════════════════════════════════════════ */
   .sidebar-gradient {
-    background: linear-gradient(180deg, hsl(200 45% 14%) 0%, hsl(200 40% 10%) 100%);
+    background: linear-gradient(175deg, hsl(215 45% 16%) 0%, hsl(220 40% 11%) 100%);
   }
 
-  /* Premium button gradient */
+  .sidebar-nav-item {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200;
+    color: hsl(215 15% 65%);
+  }
+
+  .sidebar-nav-item:hover {
+    color: hsl(215 10% 90%);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .sidebar-nav-active {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .sidebar-nav-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, hsl(38 90% 55%) 0%, hsl(38 85% 45%) 100%);
+  }
+
+  /* ═══════════════════════════════════════════
+     ICON BADGES (colored icon backgrounds)
+     ═══════════════════════════════════════════ */
+  .icon-badge {
+    @apply flex items-center justify-center rounded-lg;
+    width: 36px;
+    height: 36px;
+  }
+
+  .icon-badge-amber {
+    background: linear-gradient(135deg, hsl(38 90% 92%) 0%, hsl(38 80% 86%) 100%);
+    color: hsl(38 80% 35%);
+  }
+
+  .icon-badge-blue {
+    background: linear-gradient(135deg, hsl(215 70% 93%) 0%, hsl(215 60% 87%) 100%);
+    color: hsl(215 60% 35%);
+  }
+
+  .icon-badge-emerald {
+    background: linear-gradient(135deg, hsl(155 50% 92%) 0%, hsl(155 45% 86%) 100%);
+    color: hsl(155 50% 32%);
+  }
+
+  .icon-badge-slate {
+    background: linear-gradient(135deg, hsl(215 15% 93%) 0%, hsl(215 12% 88%) 100%);
+    color: hsl(215 15% 42%);
+  }
+
+  /* ═══════════════════════════════════════════
+     BUTTONS
+     ═══════════════════════════════════════════ */
   .btn-premium {
-    background: linear-gradient(135deg, hsl(200 60% 22%) 0%, hsl(200 55% 28%) 100%);
-    @apply transition-all duration-200 hover:shadow-lg;
+    background: linear-gradient(135deg, hsl(215 50% 23%) 0%, hsl(215 45% 30%) 100%);
+    @apply text-white font-semibold shadow-sm transition-all duration-200;
   }
 
-  /* Gold accent for special elements */
+  .btn-premium:hover {
+    background: linear-gradient(135deg, hsl(215 50% 28%) 0%, hsl(215 45% 35%) 100%);
+    @apply shadow-md;
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, hsl(38 90% 50%) 0%, hsl(38 85% 45%) 100%);
+    @apply text-white font-semibold shadow-sm transition-all duration-200;
+  }
+
+  .btn-gold:hover {
+    @apply shadow-md;
+    filter: brightness(1.05);
+  }
+
+  /* ═══════════════════════════════════════════
+     TABLE SYSTEM
+     ═══════════════════════════════════════════ */
+  .premium-table {
+    @apply w-full;
+  }
+
+  .premium-table thead tr {
+    @apply border-b;
+    background: hsl(40 30% 97%);
+  }
+
+  .premium-table thead th {
+    @apply px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400;
+  }
+
+  .premium-table tbody tr {
+    @apply border-b border-slate-100/80 transition-colors duration-150;
+  }
+
+  .premium-table tbody tr:hover {
+    background: hsl(40 30% 98%);
+  }
+
+  .premium-table tbody td {
+    @apply px-4 py-3;
+  }
+
+  /* ═══════════════════════════════════════════
+     TIMER
+     ═══════════════════════════════════════════ */
+  .timer-display {
+    @apply text-center font-mono font-bold tabular-nums tracking-tight;
+    font-size: clamp(2.5rem, 6vw, 3.5rem);
+  }
+
+  .timer-running {
+    color: hsl(155 55% 38%);
+  }
+
+  .timer-paused {
+    color: hsl(38 80% 45%);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* ═══════════════════════════════════════════
+     LAYOUT
+     ═══════════════════════════════════════════ */
+  .main-content-bg {
+    background:
+      linear-gradient(135deg, hsl(40 35% 97%) 0%, hsl(0 0% 99%) 40%, hsl(215 20% 97%) 100%);
+  }
+
+  /* ═══════════════════════════════════════════
+     ACCENT UTILITIES
+     ═══════════════════════════════════════════ */
+  .accent-glow {
+    @apply text-amber-500;
+  }
+
   .accent-gold {
-    @apply text-amber-500 dark:text-amber-400;
+    @apply text-amber-500;
+  }
+
+  .gold-badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+    background: linear-gradient(135deg, hsl(40 80% 95%) 0%, hsl(38 70% 90%) 100%);
+    color: hsl(38 70% 30%);
+    border: 1px solid hsl(38 50% 82%);
+  }
+
+  .status-dot {
+    @apply h-2 w-2 rounded-full;
+  }
+
+  .status-dot-active {
+    @apply bg-emerald-500;
+    box-shadow: 0 0 0 3px hsl(155 60% 90%);
+  }
+
+  .status-dot-paused {
+    @apply bg-amber-500;
+    box-shadow: 0 0 0 3px hsl(38 80% 90%);
+  }
+
+  /* ═══════════════════════════════════════════
+     ENTRY LIST ITEMS
+     ═══════════════════════════════════════════ */
+  .entry-item {
+    @apply flex flex-col rounded-lg p-3.5 transition-all duration-200;
+    background: hsl(40 25% 98%);
+    border: 1px solid hsl(35 20% 91%);
+  }
+
+  .entry-item:hover {
+    background: hsl(40 30% 97%);
+    border-color: hsl(35 25% 85%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  }
+
+  /* ═══════════════════════════════════════════
+     SEARCH INPUT
+     ═══════════════════════════════════════════ */
+  .search-input {
+    @apply rounded-lg border bg-white pl-9 text-sm transition-all duration-200;
+    border-color: hsl(35 20% 88%);
+  }
+
+  .search-input:focus {
+    border-color: hsl(38 60% 65%);
+    box-shadow: 0 0 0 3px hsl(38 70% 92%);
+  }
+
+  /* ═══════════════════════════════════════════
+     LEGACY COMPAT (keep sidebar-active-bg)
+     ═══════════════════════════════════════════ */
+  .sidebar-active-bg {
+    @apply bg-amber-50/40 border-l-2 border-amber-500 pl-2.5;
   }
 }

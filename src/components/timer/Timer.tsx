@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -76,7 +75,6 @@ const Timer = () => {
       if (!clientName.trim()) throw new Error("Client name is required");
       if (!matterName.trim()) throw new Error("Matter name is required");
 
-      // Create the client
       const { data: newClient, error: clientError } = await supabase
         .from("clients")
         .insert({
@@ -90,7 +88,6 @@ const Timer = () => {
       if (clientError) throw clientError;
       if (!newClient) throw new Error("Failed to create client.");
 
-      // Create the matter
       const { data: newMatter, error: matterError } = await supabase
         .from("matters")
         .insert({
@@ -103,7 +100,6 @@ const Timer = () => {
         .single();
 
       if (matterError) {
-        // Rollback client creation if matter fails
         await supabase.from("clients").delete().eq("id", newClient.id);
         throw matterError;
       }
@@ -115,11 +111,7 @@ const Timer = () => {
       qc.invalidateQueries({ queryKey: ["matters-for-clients"] });
       qc.invalidateQueries({ queryKey: ["matters-all-active"] });
       toast({ title: "Client and matter created" });
-
-      // Start timer on the new matter
       actions.start(newMatter.id, newMatter.client_id);
-
-      // Reset form and close dialog
       setClientName("");
       setMatterName("");
       setHourlyRate("0");
@@ -141,88 +133,102 @@ const Timer = () => {
       actions.pause();
       return;
     }
-
     if (isPaused) {
       actions.resume();
       return;
     }
-
-    // No active entry: start-first flow with searchable matter picker
     setMatterPickerOpen(true);
   };
 
   return (
     <>
-      <Card className="premium-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
+      <div className="premium-card overflow-hidden">
+        {/* Timer header bar */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+          <div className="flex items-center gap-2.5">
             {isRunning && (
               <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="status-dot status-dot-active" />
               </span>
             )}
-            {isPaused && (
-              <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
-            )}
-            {activeEntry ? activeEntry.matter?.name : "Timer"}
-          </CardTitle>
+            {isPaused && <span className="status-dot status-dot-paused" />}
+            <h3 className="text-[15px] font-bold text-slate-900">
+              {activeEntry ? activeEntry.matter?.name : "Timer"}
+            </h3>
+          </div>
           {activeEntry?.matter?.client && (
-            <p className="text-sm text-slate-600">
+            <span className="text-[12px] text-slate-400 font-medium">
               {activeEntry.matter.client.name}
-            </p>
+            </span>
           )}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/40 px-4 py-5">
-            <div
-              className={cn(
-                "text-4xl md:text-5xl font-mono font-bold text-center tabular-nums tracking-tight",
-                isRunning && "text-green-600 dark:text-green-400",
-                isPaused && "text-yellow-600 dark:text-yellow-400 animate-pulse",
-              )}
-              role="timer"
-              aria-live="polite"
-              aria-label={`Timer: ${formatDuration(elapsed)}`}
-            >
-              {formatDuration(elapsed)}
-            </div>
+        </div>
+
+        {/* Timer display */}
+        <div className="mx-5 rounded-xl p-6"
+             style={{
+               background: isRunning
+                 ? 'linear-gradient(135deg, hsl(155 40% 97%) 0%, hsl(155 30% 95%) 100%)'
+                 : isPaused
+                 ? 'linear-gradient(135deg, hsl(38 50% 97%) 0%, hsl(38 40% 95%) 100%)'
+                 : 'linear-gradient(135deg, hsl(215 15% 97%) 0%, hsl(215 10% 95%) 100%)',
+               border: `1px solid ${isRunning ? 'hsl(155 30% 88%)' : isPaused ? 'hsl(38 40% 88%)' : 'hsl(215 10% 90%)'}`,
+             }}>
+          <div
+            className={cn(
+              "timer-display",
+              isRunning && "timer-running",
+              isPaused && "timer-paused",
+              !isRunning && !isPaused && "text-slate-300",
+            )}
+            role="timer"
+            aria-live="polite"
+            aria-label={`Timer: ${formatDuration(elapsed)}`}
+          >
+            {formatDuration(elapsed)}
           </div>
-          <div className="flex justify-center gap-2.5 md:gap-3">
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={handleTogglePlay}
-              disabled={isLoading}
-              aria-label={isRunning ? "Pause timer" : isPaused ? "Resume timer" : "Start timer"}
-              className="h-11 w-11 md:h-12 md:w-12 rounded-full"
-            >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : isRunning ? (
-                <Pause className="h-5 w-5" />
-              ) : (
-                <Play className="h-5 w-5 ml-0.5" />
-              )}
-            </Button>
-            <Button
-              size="icon"
-              variant="destructive"
-              onClick={actions.stop}
-              disabled={!activeEntry || isLoading}
-              aria-label="Stop timer"
-              className="h-11 w-11 md:h-12 md:w-12 rounded-full"
-            >
-              <Square className="h-5 w-5" />
-            </Button>
-          </div>
-          {!activeEntry && (
-            <p className="text-center text-xs text-slate-600">
-              Click play to choose a matter and start tracking.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center justify-center gap-3 px-5 py-5">
+          <Button
+            size="icon"
+            onClick={handleTogglePlay}
+            disabled={isLoading}
+            aria-label={isRunning ? "Pause timer" : isPaused ? "Resume timer" : "Start timer"}
+            className={cn(
+              "h-12 w-12 rounded-full shadow-md transition-all duration-200",
+              isRunning
+                ? "bg-amber-500 hover:bg-amber-600 text-white"
+                : "btn-premium",
+            )}
+          >
+            {isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : isRunning ? (
+              <Pause className="h-5 w-5" />
+            ) : (
+              <Play className="h-5 w-5 ml-0.5" />
+            )}
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={actions.stop}
+            disabled={!activeEntry || isLoading}
+            aria-label="Stop timer"
+            className="h-12 w-12 rounded-full border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300 disabled:opacity-30"
+          >
+            <Square className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {!activeEntry && (
+          <p className="text-center text-[12px] text-slate-400 pb-5 -mt-1">
+            Click play to choose a matter and start tracking.
+          </p>
+        )}
+      </div>
 
       <Dialog open={matterPickerOpen} onOpenChange={setMatterPickerOpen}>
         <DialogContent className="sm:max-w-lg">
@@ -236,33 +242,35 @@ const Timer = () => {
           {!showCreateForm ? (
             <>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input
-                  className="pl-9"
+                  className="search-input"
                   placeholder="Search by client or matter"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
 
-              <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+              <div className="max-h-80 overflow-y-auto space-y-1.5 pr-1">
                 {filteredMatters.length > 0 ? (
                   filteredMatters.map((matter) => (
-                    <Button
+                    <button
                       key={matter.id}
-                      variant="outline"
-                      className="w-full justify-between h-auto py-2"
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all duration-150 hover:bg-slate-50 group"
+                      style={{ border: '1px solid transparent' }}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'hsl(35 20% 90%)'}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
                       onClick={() => handleStartForMatter(matter)}
                     >
-                      <span className="text-left truncate pr-3">
-                        <span className="font-medium text-slate-900">{matter.client?.name ?? "Unknown client"}</span>
-                        <span className="text-slate-600">{" — "}{matter.name}</span>
+                      <span className="truncate pr-3">
+                        <span className="text-[13px] font-semibold text-slate-800">{matter.client?.name ?? "Unknown client"}</span>
+                        <span className="text-[13px] text-slate-400">{" — "}{matter.name}</span>
                       </span>
-                      <Play className="h-4 w-4 shrink-0" />
-                    </Button>
+                      <Play className="h-3.5 w-3.5 shrink-0 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                    </button>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-600 text-center py-6">
+                  <p className="text-[13px] text-slate-400 text-center py-8">
                     No active matters match your search.
                   </p>
                 )}
@@ -270,7 +278,7 @@ const Timer = () => {
 
               <Button
                 variant="outline"
-                className="w-full gap-2"
+                className="w-full gap-2 text-[13px] font-semibold"
                 onClick={() => setShowCreateForm(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -280,7 +288,7 @@ const Timer = () => {
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="client-name">Client Name *</Label>
+                <Label htmlFor="client-name" className="text-[13px] font-semibold text-slate-700">Client Name *</Label>
                 <Input
                   id="client-name"
                   placeholder="e.g., Acme Corp"
@@ -290,7 +298,7 @@ const Timer = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="matter-name">Matter Name *</Label>
+                <Label htmlFor="matter-name" className="text-[13px] font-semibold text-slate-700">Matter Name *</Label>
                 <Input
                   id="matter-name"
                   placeholder="e.g., Contract Review"
@@ -300,7 +308,7 @@ const Timer = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hourly-rate">Hourly Rate (optional)</Label>
+                <Label htmlFor="hourly-rate" className="text-[13px] font-semibold text-slate-700">Hourly Rate (optional)</Label>
                 <Input
                   id="hourly-rate"
                   type="number"
@@ -327,7 +335,7 @@ const Timer = () => {
                   Cancel
                 </Button>
                 <Button
-                  className="flex-1 gap-2"
+                  className="flex-1 gap-2 btn-premium"
                   onClick={() => createClientAndMatter.mutate()}
                   disabled={
                     !clientName.trim() ||

@@ -1,0 +1,141 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e8]:
+        - generic [ref=e9]: 6M
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: SixMin Legal
+          - paragraph [ref=e12]: TimeTrack
+      - navigation "Main navigation" [ref=e13]:
+        - paragraph [ref=e14]: Navigation
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /
+            - img [ref=e18]
+            - generic [ref=e21]: Dashboard
+            - img [ref=e22]
+          - link "Clients & Matters" [ref=e24] [cursor=pointer]:
+            - /url: /clients-matters
+            - img [ref=e26]
+            - generic [ref=e31]: Clients & Matters
+            - img [ref=e32]
+          - link "Entries" [ref=e34] [cursor=pointer]:
+            - /url: /entries
+            - img [ref=e36]
+            - generic [ref=e39]: Entries
+            - img [ref=e40]
+          - link "Invoices" [ref=e42] [cursor=pointer]:
+            - /url: /invoices
+            - img [ref=e44]
+            - generic [ref=e47]: Invoices
+            - img [ref=e48]
+          - link "Reports" [ref=e50] [cursor=pointer]:
+            - /url: /reports
+            - img [ref=e52]
+            - generic [ref=e54]: Reports
+            - img [ref=e55]
+          - link "Settings" [ref=e57] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e59]
+            - generic [ref=e62]: Settings
+            - img [ref=e63]
+      - generic [ref=e65]:
+        - button "Sign Out" [ref=e66] [cursor=pointer]:
+          - img [ref=e67]
+          - generic [ref=e70]: Sign Out
+        - generic [ref=e71]: Ctrl+K quick switch matter
+    - separator [ref=e72]:
+      - img [ref=e74]
+    - main [ref=e82]:
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - paragraph [ref=e86]:
+            - link "Invoices" [ref=e87] [cursor=pointer]:
+              - /url: /invoices
+            - text: / New Invoice
+          - heading "New Invoice" [level=1] [ref=e88]
+          - paragraph [ref=e89]: Select unbilled time and expenses, review the live totals, and create a draft invoice for payment collection.
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - heading "Invoice Builder" [level=3] [ref=e92]
+            - paragraph [ref=e93]: Create a draft invoice from live unbilled time entries and expenses.
+          - generic [ref=e94]:
+            - list [ref=e95]:
+              - listitem [ref=e96]: 1. Select Client & Matter
+              - listitem [ref=e97]: 2. Choose Unbilled Entries
+              - listitem [ref=e98]: 3. Create Draft Invoice
+            - generic [ref=e99]:
+              - generic [ref=e100]:
+                - text: Client
+                - combobox [ref=e101] [cursor=pointer]:
+                  - generic: Select client
+                  - img [ref=e102]
+              - generic [ref=e104]:
+                - text: Matter
+                - combobox [disabled] [ref=e105]:
+                  - generic: All matters
+                  - img [ref=e106]
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - text: Issue date
+                - textbox [ref=e110]: 2026-03-22
+              - generic [ref=e111]:
+                - text: Due date
+                - textbox [ref=e112]: 2026-04-21
+              - generic [ref=e113]:
+                - text: Payment terms
+                - textbox "Net 30" [ref=e114]
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - generic [ref=e117]:
+                  - heading "Trust drawdown" [level=3] [ref=e118]
+                  - paragraph [ref=e119]: Automatically apply available matter trust when this invoice is created.
+                - checkbox "Automatically apply available trust" [disabled] [ref=e120]
+              - generic [ref=e121]:
+                - generic [ref=e122]:
+                  - paragraph [ref=e123]: Available trust
+                  - paragraph [ref=e124]: $0.00
+                - generic [ref=e125]:
+                  - paragraph [ref=e126]: Applied on create
+                  - paragraph [ref=e127]: $0.00
+                - generic [ref=e128]:
+                  - paragraph [ref=e129]: Projected balance due
+                  - paragraph [ref=e130]: $0.00
+              - paragraph [ref=e131]: Select a matter to enable matter-level trust drawdown.
+            - generic [ref=e132]:
+              - generic [ref=e133]:
+                - heading "Unbilled Work" [level=3] [ref=e134]
+                - generic [ref=e135]: 6 available
+              - generic [ref=e136]:
+                - heading "Choose a client first" [level=2] [ref=e137]
+                - paragraph [ref=e138]: Select a client to load its unbilled time entries and expenses.
+            - generic [ref=e139]:
+              - heading "Draft Preview" [level=3] [ref=e140]
+              - generic [ref=e141]:
+                - generic [ref=e142]:
+                  - text: Notes
+                  - textbox "Optional billing notes that appear on the invoice." [ref=e143]
+                  - paragraph [ref=e144]: 0 items selected for this draft.
+                - generic [ref=e145]:
+                  - generic [ref=e146]:
+                    - generic [ref=e147]: Subtotal
+                    - generic [ref=e148]: $0.00
+                  - generic [ref=e149]:
+                    - generic [ref=e150]: Tax
+                    - generic [ref=e151]: $0.00
+                  - generic [ref=e152]:
+                    - generic [ref=e153]: Total
+                    - generic [ref=e154]: $0.00
+                  - paragraph [ref=e155]: Invoice numbers are allocated automatically when the draft is created.
+              - generic [ref=e156]:
+                - button "Create Draft Invoice" [disabled]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e157]:
+        - generic [ref=e159]: Expense created
+      - listitem [ref=e160]:
+        - generic [ref=e162]: Client and first matter created
+```

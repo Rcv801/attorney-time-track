@@ -41,6 +41,12 @@ If `PAPERCLIP_APPROVAL_ID` is set:
 - Use `paperclip-create-agent` skill when hiring new agents.
 - Assign work to the right agent for the job.
 
+## 6.5 Queue Hygiene
+
+- At the end of each CEO pass, verify each active direct report has at least one assigned issue in `todo`, `in_progress`, or `blocked`.
+- If an active report has no such issue and executable work still exists, promote the next ready task from `backlog` to `todo` and assign it.
+- Treat `backlog` as parked work only. Every task in `todo` must already be both ready and assigned.
+
 ## 7. Fact Extraction
 
 1. Check for new conversations since last extraction.

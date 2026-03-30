@@ -4,7 +4,7 @@ import { toast as sonnerToast } from "sonner";
 type Toast = {
   id: string;
   dismiss: () => void;
-  update: (props: Record<string, any>) => void;
+  update: (props: Record<string, unknown>) => void;
 };
 
 type ToastProps = {

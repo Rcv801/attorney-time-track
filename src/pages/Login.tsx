@@ -114,23 +114,25 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="flex min-h-screen items-center justify-center p-4"
+         style={{ background: 'linear-gradient(135deg, hsl(220 40% 12%) 0%, hsl(215 45% 16%) 40%, hsl(220 35% 10%) 100%)' }}>
+      <div className="w-full max-w-sm space-y-8">
         {/* Brand Logo Section */}
-        <div className="text-center space-y-2">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg">
-            <span className="text-2xl font-bold text-slate-900">6M</span>
+        <div className="text-center space-y-3">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl shadow-xl"
+               style={{ background: 'linear-gradient(135deg, hsl(42 95% 65%) 0%, hsl(38 90% 50%) 100%)' }}>
+            <span className="text-2xl font-extrabold text-slate-900">6M</span>
           </div>
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-white tracking-tight">SixMin Legal</h1>
-            <p className="text-sm text-slate-300">Legal time tracking, simplified.</p>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">SixMin Legal</h1>
+            <p className="text-[14px] font-medium" style={{ color: 'hsl(215 20% 55%)' }}>Legal time tracking, simplified.</p>
           </div>
         </div>
 
         {/* Card */}
-        <Card className="border border-slate-700 bg-white/95 shadow-2xl rounded-2xl">
-          <CardHeader className="text-center pb-3">
-            <CardTitle className="text-2xl text-slate-900">TimeTrack</CardTitle>
+        <Card className="bg-white shadow-2xl rounded-2xl" style={{ border: '1px solid hsl(215 20% 90%)' }}>
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-xl font-bold text-slate-800">TimeTrack</CardTitle>
           </CardHeader>
         <CardContent>
           {error && (

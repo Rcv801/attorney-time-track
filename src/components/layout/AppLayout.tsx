@@ -27,20 +27,21 @@ const AppLayout = () => {
     <>
       {/* Mobile / tablet layout */}
       <div className="flex h-screen w-full flex-col lg:hidden">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-gradient-to-r from-blue-900/90 to-slate-900/90 px-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-xs font-bold text-slate-900">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between px-4 shadow-sm sidebar-gradient">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-extrabold text-slate-900 shadow"
+                 style={{ background: 'linear-gradient(135deg, hsl(42 95% 65%) 0%, hsl(38 90% 50%) 100%)' }}>
               6M
             </div>
             <div className="leading-tight">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-slate-300 font-semibold">SixMin Legal</p>
-              <p className="text-sm font-bold text-white">TimeTrack</p>
+              <p className="text-[10px] uppercase tracking-[0.12em] font-semibold" style={{ color: 'hsl(215 20% 55%)' }}>SixMin Legal</p>
+              <p className="text-sm font-bold text-white tracking-tight">TimeTrack</p>
             </div>
           </div>
 
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Open navigation menu">
+              <Button variant="ghost" size="icon" aria-label="Open navigation menu" className="text-slate-300 hover:text-white hover:bg-white/10">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
@@ -50,7 +51,7 @@ const AppLayout = () => {
           </Sheet>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-auto bg-gradient-to-br from-amber-50/50 to-white">
+        <main className="min-h-0 flex-1 overflow-auto main-content-bg">
           <div className="mx-auto w-full max-w-7xl p-4 md:p-6">
             <Outlet />
           </div>
@@ -80,7 +81,7 @@ const AppLayout = () => {
           </ResizablePanel>
           <ResizableHandle withHandle className="bg-border hover:bg-border/80" />
           <ResizablePanel defaultSize={80} minSize={60}>
-            <main className="h-full overflow-auto bg-gradient-to-br from-amber-50/50 to-white">
+            <main className="h-full overflow-auto main-content-bg">
               <div className="mx-auto max-w-7xl p-6 lg:p-8">
                 <Outlet />
               </div>

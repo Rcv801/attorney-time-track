@@ -2,6 +2,12 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatCurrencyFromCents } from "../format";
 
+type AutoTableDoc = jsPDF & {
+  lastAutoTable?: {
+    finalY: number;
+  };
+};
+
 interface FirmSettings {
   firm_name: string | null;
   attorney_name: string | null;
@@ -73,23 +79,21 @@ export async function generateInvoicePDF(
   client: Client,
   matterName: string | null,
   lineItems: LineItem[],
-  firmSettings: FirmSettings
+  firmSettings: FirmSettings,
 ): Promise<Blob> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
   let yPos = 20;
 
-  // Firm Name (Header)
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
   doc.text(firmSettings.firm_name || "Law Firm", margin, yPos);
   yPos += 8;
 
-  // Firm Details
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  
+
   const firmAddress = buildFirmAddress(firmSettings);
   if (firmAddress) {
     doc.text(firmAddress, margin, yPos);
@@ -104,11 +108,10 @@ export async function generateInvoicePDF(
     yPos += 5;
   }
 
-  // Invoice Title (right side)
   doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
   doc.text("INVOICE", pageWidth - margin, 30, { align: "right" });
-  
+
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text(`# ${invoice.invoiceNumber}`, pageWidth - margin, 40, { align: "right" });
@@ -120,7 +123,6 @@ export async function generateInvoicePDF(
 
   yPos = 75;
 
-  // Bill To
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("Bill To:", margin, yPos);
@@ -161,7 +163,6 @@ export async function generateInvoicePDF(
 
   yPos += 15;
 
-  // Line Items Table
   const tableData = lineItems.map((item) => [
     formatDate(item.date),
     item.description,
@@ -194,11 +195,11 @@ export async function generateInvoicePDF(
     },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  const autoTableDoc = doc as AutoTableDoc;
+  yPos = (autoTableDoc.lastAutoTable?.finalY ?? yPos) + 15;
 
-  // Summary Section
   const summaryX = pageWidth - margin - 60;
-  
+
   doc.setFontSize(10);
   doc.text("Subtotal:", summaryX, yPos);
   doc.text(formatCurrencyFromCents(invoice.subtotalCents), pageWidth - margin, yPos, { align: "right" });
@@ -222,13 +223,11 @@ export async function generateInvoicePDF(
     yPos += 6;
   }
 
-  // Total (bold)
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("Balance Due:", summaryX, yPos);
   doc.text(formatCurrencyFromCents(invoice.balanceDueCents), pageWidth - margin, yPos, { align: "right" });
 
-  // Notes (if any)
   if (invoice.notes) {
     yPos += 20;
     doc.setFont("helvetica", "bold");
@@ -237,12 +236,11 @@ export async function generateInvoicePDF(
     yPos += 5;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    
+
     const splitNotes = doc.splitTextToSize(invoice.notes, pageWidth - margin * 2);
     doc.text(splitNotes, margin, yPos);
   }
 
-  // Footer
   doc.setFontSize(8);
   doc.setTextColor(128, 128, 128);
   const footerY = doc.internal.pageSize.getHeight() - 10;

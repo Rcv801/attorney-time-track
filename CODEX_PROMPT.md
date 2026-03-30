@@ -3,10 +3,10 @@
 ## Project Overview
 
 **Repository:** `Rcv801/attorney-time-track`  
-**Local path:** `/Users/atlasbot3000/.openclaw/workspace/attorney-time-track`  
+**Local path:** `/Users/billbrasky/.openclaw/workspace/attorney-time-track`  
 **Live preview:** https://attorney-time-track.vercel.app/  
 **Stack:** React + TypeScript + Vite + Supabase + shadcn/ui + Tailwind  
-**Supabase project:** `ibvmcjzhnkkgizagjmuo`  
+**Supabase project:** `gqudxeaxdgjdmzouahfb`  
 
 This is a lean time tracking & billing app for solo attorneys. The tagline is "Track time. Send invoices. Get paid. Nothing else." We intentionally avoid the bloat of competitors like Clio/MyCase.
 

@@ -8,7 +8,7 @@ Lean time tracking & billing app for solo/small firm attorneys. "The anti-Clio."
 - **Local:** ~/workspace/attorney-time-track
 - **Stack:** React + TypeScript + Vite + Supabase + shadcn/ui + Tailwind
 - **Live preview:** https://attorney-time-track.vercel.app/
-- **Supabase project:** ibvmcjzhnkkgizagjmuo
+- **Supabase project:** gqudxeaxdgjdmzouahfb (Six Min Dev)
 - **Built with:** Lovable.dev (syncs with their platform)
 
 ## Dev Workflow

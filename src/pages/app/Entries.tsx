@@ -254,8 +254,9 @@ const Entries = () => {
       {/* Header with date picker */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Entries</h1>
-          <p className="text-slate-600 mt-1">
+          <p className="section-title mb-1.5">Time & Expenses</p>
+          <h1 className="page-title">Entries</h1>
+          <p className="page-subtitle">
             {completedCount} time entries · {formatBillableHours(roundToSixMinutes(totalSeconds))}
             {(expenses?.length ?? 0) > 0 && (
               <> · {expenses!.length} expenses · ${expenseTotal.toFixed(2)}</>

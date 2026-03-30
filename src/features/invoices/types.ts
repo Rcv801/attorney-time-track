@@ -52,6 +52,7 @@ export interface InvoiceBuilderMatterOption {
   id: string;
   clientId: string;
   name: string;
+  trustBalanceCents: number;
 }
 
 export interface InvoiceBuilderEntry {
@@ -63,22 +64,34 @@ export interface InvoiceBuilderEntry {
   amountCents: number;
 }
 
+export interface InvoiceBuilderExpense {
+  id: string;
+  date: string;
+  description: string;
+  amountCents: number;
+  category?: string | null;
+}
+
 export interface InvoiceBuilderSelection {
   clientId?: string;
   matterId?: string;
   selectedEntryIds: string[];
+  selectedExpenseIds: string[];
 }
 
 export interface InvoiceBuilderSummary {
   subtotalCents: number;
   taxCents: number;
   totalCents: number;
+  trustAppliedCents: number;
+  balanceDueCents: number;
 }
 
 export interface InvoiceBuilderData {
   clients: InvoiceBuilderClientOption[];
   matters: InvoiceBuilderMatterOption[];
   unbilledEntries: InvoiceBuilderEntry[];
+  unbilledExpenses: InvoiceBuilderExpense[];
   selection: InvoiceBuilderSelection;
   summary: InvoiceBuilderSummary;
 }
@@ -86,10 +99,14 @@ export interface InvoiceBuilderData {
 export interface InvoiceDetail {
   id: string;
   invoiceNumber: string;
+  clientId: string;
   clientName: string;
+  matterId?: string | null;
   matterName: string;
   issueDate: string;
   dueDate: string;
+  dateRangeStart?: string | null;
+  dateRangeEnd?: string | null;
   status: InvoiceStatus;
   subtotalCents: number;
   taxCents: number;
@@ -99,6 +116,8 @@ export interface InvoiceDetail {
   trustAppliedCents: number;
   paymentTerms?: string | null;
   paymentLink?: string | null;
+  pdfUrl?: string | null;
+  sentAt?: string | null;
   notes?: string;
   lineItems: InvoiceLineItem[];
   payments: InvoicePayment[];

@@ -1,7 +1,12 @@
-INSERT INTO clients (id, name, email) VALUES
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Acme Inc.', 'contact@acme.inc'),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Stark Industries', 'contact@stark.com');
+-- Historical seed migration disabled for clean/project-agnostic bootstraps.
+--
+-- The original file inserted demo rows using an outdated schema
+-- (missing user_id ownership and referencing non-existent columns like email/rate).
+--
+-- Keep this migration number as a no-op so existing histories remain contiguous,
+-- but do not seed production/dev cloud projects implicitly.
 
-INSERT INTO matters (id, name, matter_number, rate, client_id) VALUES
-('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Project Phoenix', '12345', 150, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'),
-('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Project Titan', '67890', 200, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12');
+DO $$
+BEGIN
+  RAISE NOTICE 'Skipping legacy demo seed migration 20250208000002_seed_data.sql';
+END $$;

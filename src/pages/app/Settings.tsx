@@ -328,8 +328,9 @@ const Settings = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Settings</h1>
-          <p className="mt-1 text-slate-600">
+          <p className="section-title mb-1.5">Configuration</p>
+          <h1 className="page-title">Settings</h1>
+          <p className="page-subtitle">
             Configure firm identity, billing defaults, and invoice messaging in one place.
           </p>
         </div>

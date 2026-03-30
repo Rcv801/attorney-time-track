@@ -17,6 +17,6 @@ You MUST use the `para-memory-files` skill for all memory operations: recall, da
 
 Read these every heartbeat:
 
-- `$AGENT_HOME/HEARTBEAT.md`
-- `$AGENT_HOME/SOUL.md`
-- `$AGENT_HOME/TOOLS.md`
+- `agents/product-designer/HEARTBEAT.md`
+- `agents/product-designer/SOUL.md`
+- `agents/product-designer/TOOLS.md`

@@ -111,12 +111,13 @@ const Dashboard = () => {
   if (isLoading) return <LoadingSkeleton />;
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <div className="space-y-8">
+      {/* Page header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="section-title mb-2 text-slate-600">Practice Command Center</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-          <p className="text-slate-600 mt-2 text-sm font-medium">
+          <p className="section-title mb-1.5">Practice Command Center</p>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               month: "long",
@@ -125,36 +126,67 @@ const Dashboard = () => {
             })}
           </p>
         </div>
-        <div className="hidden md:flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50/80 px-4 py-2 text-xs text-amber-900 font-medium shadow-sm">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          Tracking ready
+        <div className="hidden md:flex">
+          <div className="gold-badge">
+            <span className="status-dot status-dot-active mr-2 animate-pulse" />
+            Tracking ready
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Billable Target"
-          value={`${todayBillableHours.toFixed(1)} / ${billableTarget.toFixed(1)} hrs`}
-          icon={<TrendingUp className="h-4 w-4 text-amber-600" />}
-          progress={billableProgress}
-          featured
-        />
-        <StatCard
-          title="This Week"
-          value={formatBillableHours(weekBillableHours)}
-          icon={<Clock className="h-4 w-4 text-blue-600" />}
-        />
-        <StatCard
-          title="Billable Amount"
-          value={`$${totalBillable.toFixed(2)}`}
-          icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
-        />
-        <StatCard
-          title="Entries Today"
-          value={String(completedEntries)}
-          icon={<FileText className="h-4 w-4 text-slate-600" />}
-        />
+        <div className="stat-card-featured">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[12px] font-semibold text-amber-700/70 uppercase tracking-wide">Billable Target</span>
+            <div className="icon-badge icon-badge-amber">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="text-[1.75rem] font-extrabold tracking-tight text-slate-900 leading-none">
+            {todayBillableHours.toFixed(1)} <span className="text-lg font-semibold text-slate-400">/ {billableTarget.toFixed(1)} hrs</span>
+          </p>
+          <div className="mt-3 space-y-1.5">
+            <Progress value={billableProgress} className="h-2 bg-amber-100/80" />
+            <p className="text-[11px] text-amber-700/60 font-medium">{Math.round(billableProgress)}% of daily target</p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide">This Week</span>
+            <div className="icon-badge icon-badge-blue">
+              <Clock className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="text-[1.75rem] font-extrabold tracking-tight text-slate-900 leading-none">
+            {formatBillableHours(weekBillableHours)}
+          </p>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide">Billable Amount</span>
+            <div className="icon-badge icon-badge-emerald">
+              <DollarSign className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="text-[1.75rem] font-extrabold tracking-tight text-slate-900 leading-none">
+            ${totalBillable.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide">Entries Today</span>
+            <div className="icon-badge icon-badge-slate">
+              <FileText className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="text-[1.75rem] font-extrabold tracking-tight text-slate-900 leading-none">
+            {String(completedEntries)}
+          </p>
+        </div>
       </div>
 
       {/* Timer — front and center */}
@@ -162,33 +194,34 @@ const Dashboard = () => {
 
       {/* Quick Start + Today's entries */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="premium-card rounded-xl border border-slate-200 shadow-md">
-          <CardHeader className="pb-3 border-b border-slate-100">
-            <CardTitle className="text-lg font-bold text-slate-900">Quick Start</CardTitle>
-            <p className="text-sm text-slate-600 mt-1">
-              Pin your most-used matters for one-click time tracking.
+        <div className="premium-card overflow-hidden">
+          <div className="px-5 pt-5 pb-3 border-b border-slate-100/80">
+            <h3 className="text-[15px] font-bold text-slate-900">Quick Start</h3>
+            <p className="text-[13px] text-slate-400 mt-0.5">
+              Pin your most-used matters for one-click tracking.
             </p>
-          </CardHeader>
-          <CardContent className="pt-4">
+          </div>
+          <div className="p-5">
             <MatterQuickSelect />
-          </CardContent>
-        </Card>
-        <Card className="premium-card rounded-xl border border-slate-200 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
-            <CardTitle className="font-bold text-slate-900">Today's Entries</CardTitle>
+          </div>
+        </div>
+
+        <div className="premium-card overflow-hidden">
+          <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100/80">
+            <h3 className="text-[15px] font-bold text-slate-900">Today's Entries</h3>
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100"
+              className="gap-1.5 text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 hover:border-amber-300"
               onClick={() => setManualEntryOpen(true)}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               Add Entry
             </Button>
-          </CardHeader>
-          <CardContent className="pt-4">
+          </div>
+          <div className="p-5">
             {entries && entries.filter(e => e.end_at).length > 0 ? (
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {entries
                   .filter((e) => e.end_at)
                   .map((entry) => {
@@ -201,18 +234,15 @@ const Dashboard = () => {
                     const isEditing = editingEntryId === entry.id;
 
                     return (
-                      <li
-                        key={entry.id}
-                        className="flex flex-col rounded-lg border border-slate-200 bg-slate-50/40 p-3 transition-all duration-200 hover:bg-slate-100/60 hover:border-slate-300 hover:shadow-sm"
-                      >
+                      <li key={entry.id} className="entry-item">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-slate-900 truncate">{displayName}</p>
+                            <p className="text-[13px] font-semibold text-slate-800 truncate">{displayName}</p>
                             {isEditing ? (
                               <div className="mt-2 space-y-2">
                                 <div className="relative">
                                   <textarea
-                                    className="w-full rounded-lg border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+                                    className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm text-slate-800 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all"
                                     value={editingNotes}
                                     onChange={(e) => setEditingNotes(e.target.value)}
                                     placeholder="Enter notes..."
@@ -221,14 +251,14 @@ const Dashboard = () => {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="absolute top-1 right-1"
+                                    className="absolute top-1.5 right-1.5 h-7 w-7 text-amber-500 hover:text-amber-600 hover:bg-amber-50"
                                     onClick={handlePolishEntry}
                                     disabled={!editingNotes.trim() || polishMutation.isPending || updateEntryNotes.isPending}
                                   >
                                     {polishMutation.isPending ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                     ) : (
-                                      <Sparkles className="h-4 w-4" />
+                                      <Sparkles className="h-3.5 w-3.5" />
                                     )}
                                   </Button>
                                 </div>
@@ -236,6 +266,7 @@ const Dashboard = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    className="text-xs"
                                     onClick={() => {
                                       setEditingEntryId(null);
                                       setEditingNotes("");
@@ -246,6 +277,7 @@ const Dashboard = () => {
                                   </Button>
                                   <Button
                                     size="sm"
+                                    className="text-xs btn-premium"
                                     onClick={() => updateEntryNotes.mutate(entry.id)}
                                     disabled={updateEntryNotes.isPending}
                                   >
@@ -254,15 +286,15 @@ const Dashboard = () => {
                                 </div>
                               </div>
                             ) : (
-                              <p className="text-sm text-slate-600 truncate">
+                              <p className="text-[12px] text-slate-400 truncate mt-0.5">
                                 {entry.notes || "No notes"}
                               </p>
                             )}
                           </div>
-                          <div className="flex flex-col items-end gap-2 shrink-0">
-                            <div className="font-mono text-sm tabular-nums text-slate-900">
-                              <div className="font-semibold">{formatDuration(secs)}</div>
-                              <div className="text-xs text-slate-600 font-medium">
+                          <div className="flex flex-col items-end gap-1.5 shrink-0">
+                            <div className="text-right">
+                              <div className="text-[13px] font-bold font-mono tabular-nums text-slate-800">{formatDuration(secs)}</div>
+                              <div className="text-[11px] text-emerald-600 font-semibold tabular-nums">
                                 ${billAmount.toFixed(2)}
                               </div>
                             </div>
@@ -270,6 +302,7 @@ const Dashboard = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-6 w-6 p-0 text-slate-300 hover:text-slate-600"
                                 onClick={() => {
                                   setEditingEntryId(entry.id);
                                   setEditingNotes(entry.notes || "");
@@ -285,60 +318,22 @@ const Dashboard = () => {
                   })}
               </ul>
             ) : (
-              <p className="text-center text-slate-500 py-8 text-sm">
-                No entries yet today. Start a timer to begin tracking.
-              </p>
+              <div className="text-center py-10">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+                  <FileText className="h-5 w-5 text-slate-300" />
+                </div>
+                <p className="text-[13px] text-slate-400 font-medium">
+                  No entries yet today. Start a timer to begin tracking.
+                </p>
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       <ManualEntryDialog open={manualEntryOpen} onOpenChange={setManualEntryOpen} />
     </div>
   );
 };
-
-function StatCard({
-  title,
-  value,
-  icon,
-  progress,
-  featured,
-}: {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  progress?: number;
-  featured?: boolean;
-}) {
-  return (
-    <Card className={cn(
-      "premium-card rounded-xl",
-      featured && "border-2 border-amber-200 bg-gradient-to-br from-amber-50/80 to-white shadow-md"
-    )}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-semibold text-slate-600">{title}</CardTitle>
-        <div className={cn(
-          "rounded-lg p-2",
-          featured ? "bg-amber-100" : "bg-slate-100"
-        )}>
-          {icon}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className={cn(
-          "font-bold tracking-tight",
-          featured ? "text-3xl text-slate-900" : "text-2xl text-slate-900"
-        )}>{value}</p>
-        {progress !== undefined && (
-          <div className="space-y-1.5">
-            <Progress value={progress} className="h-2.5 bg-amber-100" />
-            <p className="text-xs text-slate-500 font-medium">{Math.round(progress)}% of daily target</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 export default Dashboard;

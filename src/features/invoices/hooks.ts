@@ -25,12 +25,18 @@ type InvoiceSummaryRow = {
 };
 
 type InvoiceDetailRow = InvoiceSummaryRow & {
+  client_id: string | null;
+  matter_id: string | null;
+  date_range_start: string | null;
+  date_range_end: string | null;
   subtotal: number | null;
   tax_amount: number | null;
   trust_applied: number | null;
   notes: string | null;
   payment_terms: string | null;
   payment_link: string | null;
+  pdf_url: string | null;
+  sent_at: string | null;
 };
 
 type InvoiceLineItemRow = {
@@ -64,6 +70,7 @@ type MatterRow = {
   id: string;
   client_id: string;
   name: string;
+  trust_balance: number | null;
 };
 
 type UnbilledEntryRow = {
@@ -76,6 +83,16 @@ type UnbilledEntryRow = {
   effective_rate: number | null;
 };
 
+type UnbilledExpenseRow = {
+  id: string;
+  client_id: string;
+  matter_id: string;
+  date: string;
+  description: string;
+  amount: number;
+  category: string | null;
+};
+
 type UserSettingsRow = {
   payment_terms: string | null;
   default_tax_rate: number | null;
@@ -84,6 +101,7 @@ type UserSettingsRow = {
 
 const EMPTY_BUILDER_SELECTION: InvoiceBuilderSelection = {
   selectedEntryIds: [],
+  selectedExpenseIds: [],
 };
 
 function dollarsToCents(amount: number | null | undefined) {
@@ -200,14 +218,27 @@ export function useInvoiceBuilderData() {
   const builderQuery = useQuery({
     queryKey: ["invoice-builder-data"],
     queryFn: async () => {
-      const [{ data: clients, error: clientsError }, { data: matters, error: mattersError }, { data: entries, error: entriesError }, { data: settings, error: settingsError }] =
+      const [
+        { data: clients, error: clientsError },
+        { data: matters, error: mattersError },
+        { data: entries, error: entriesError },
+        { data: expenses, error: expensesError },
+        { data: settings, error: settingsError },
+      ] =
         await Promise.all([
           supabase.from("clients").select("id, name").eq("archived", false).order("name"),
-          supabase.from("matters").select("id, client_id, name").eq("status", "active").order("name"),
+          supabase.from("matters").select("id, client_id, name, trust_balance").eq("status", "active").order("name"),
           supabase
             .from("unbilled_entries")
             .select("id, client_id, matter_id, start_at, notes, billed_hours, effective_rate")
             .order("start_at", { ascending: false }),
+          supabase
+            .from("expenses")
+            .select("id, client_id, matter_id, date, description, amount, category")
+            .eq("billable", true)
+            .eq("status", "unbilled")
+            .is("invoice_id", null)
+            .order("date", { ascending: false }),
           supabase.from("user_settings").select("payment_terms, default_tax_rate, invoice_notes").maybeSingle(),
         ]);
 
@@ -223,6 +254,10 @@ export function useInvoiceBuilderData() {
         throw entriesError;
       }
 
+      if (expensesError) {
+        throw expensesError;
+      }
+
       if (settingsError) {
         throw settingsError;
       }
@@ -231,6 +266,7 @@ export function useInvoiceBuilderData() {
         clients: (clients ?? []) as unknown as ClientRow[],
         matters: (matters ?? []) as unknown as MatterRow[],
         unbilledEntries: (entries ?? []) as unknown as UnbilledEntryRow[],
+        unbilledExpenses: (expenses ?? []) as unknown as UnbilledExpenseRow[],
         settings: (settings ?? null) as UserSettingsRow | null,
       };
     },
@@ -246,6 +282,7 @@ export function useInvoiceBuilderData() {
       id: matter.id,
       clientId: matter.client_id,
       name: matter.name,
+      trustBalanceCents: dollarsToCents(matter.trust_balance),
     }));
 
     const unbilledEntries = (builderQuery.data?.unbilledEntries ?? [])
@@ -278,19 +315,46 @@ export function useInvoiceBuilderData() {
         };
       });
 
-    const selectedEntries = unbilledEntries.filter((entry) => selection.selectedEntryIds.includes(entry.id));
+    const unbilledExpenses = (builderQuery.data?.unbilledExpenses ?? [])
+      .filter((expense) => {
+        if (selection.clientId && expense.client_id !== selection.clientId) {
+          return false;
+        }
 
-    const subtotalCents = selectedEntries.reduce((sum, entry) => sum + entry.amountCents, 0);
+        if (selection.matterId && expense.matter_id !== selection.matterId) {
+          return false;
+        }
+
+        return true;
+      })
+      .map((expense) => ({
+        id: expense.id,
+        date: expense.date,
+        description: expense.description.trim() || "Expense",
+        amountCents: dollarsToCents(expense.amount),
+        category: expense.category,
+      }));
+
+    const selectedEntries = unbilledEntries.filter((entry) => selection.selectedEntryIds.includes(entry.id));
+    const selectedExpenses = unbilledExpenses.filter((expense) => selection.selectedExpenseIds.includes(expense.id));
+
+    const subtotalCents =
+      selectedEntries.reduce((sum, entry) => sum + entry.amountCents, 0) +
+      selectedExpenses.reduce((sum, expense) => sum + expense.amountCents, 0);
     const taxRate = builderQuery.data?.settings?.default_tax_rate ?? 0;
     const taxCents = Math.round(subtotalCents * taxRate);
     const totalCents = subtotalCents + taxCents;
+    const selectedMatter = selection.matterId ? matters.find((matter) => matter.id === selection.matterId) : undefined;
+    const trustAppliedCents = selectedMatter ? Math.min(selectedMatter.trustBalanceCents, totalCents) : 0;
+    const balanceDueCents = Math.max(totalCents - trustAppliedCents, 0);
 
     return {
       clients,
       matters,
       unbilledEntries,
+      unbilledExpenses,
       selection,
-      summary: { subtotalCents, taxCents, totalCents },
+      summary: { subtotalCents, taxCents, totalCents, trustAppliedCents, balanceDueCents },
     };
   }, [builderQuery.data, selection]);
 
@@ -321,7 +385,7 @@ export function useInvoiceDetailQuery(invoiceId: string | undefined) {
         await Promise.all([
           supabase
             .from("invoice_summary")
-            .select("id, invoice_number, client_name, matter_name, issued_date, due_date, status, subtotal, tax_amount, total, amount_paid, balance_due, trust_applied, notes, payment_terms, payment_link")
+            .select("id, invoice_number, client_id, client_name, matter_id, matter_name, issued_date, due_date, date_range_start, date_range_end, status, subtotal, tax_amount, total, amount_paid, balance_due, trust_applied, notes, payment_terms, payment_link, pdf_url, sent_at")
             .eq("id", invoiceId)
             .maybeSingle(),
           supabase
@@ -361,10 +425,14 @@ export function useInvoiceDetailQuery(invoiceId: string | undefined) {
       return {
         id: invoiceRow.id,
         invoiceNumber: invoiceRow.invoice_number,
+        clientId: invoiceRow.client_id ?? "",
         clientName: invoiceRow.client_name ?? "Unknown Client",
+        matterId: invoiceRow.matter_id,
         matterName: invoiceRow.matter_name ?? "General",
         issueDate: invoiceRow.issued_date,
         dueDate: invoiceRow.due_date,
+        dateRangeStart: invoiceRow.date_range_start,
+        dateRangeEnd: invoiceRow.date_range_end,
         status: normalizeInvoiceStatus(invoiceRow.status, invoiceRow.due_date, invoiceRow.balance_due),
         subtotalCents: dollarsToCents(invoiceRow.subtotal),
         taxCents: dollarsToCents(invoiceRow.tax_amount),
@@ -377,6 +445,8 @@ export function useInvoiceDetailQuery(invoiceId: string | undefined) {
         trustAppliedCents: dollarsToCents(invoiceRow.trust_applied),
         paymentTerms: invoiceRow.payment_terms,
         paymentLink: invoiceRow.payment_link,
+        pdfUrl: invoiceRow.pdf_url,
+        sentAt: invoiceRow.sent_at,
         notes: invoiceRow.notes ?? undefined,
         lineItems: lineItemRows.map(mapInvoiceLineItem),
         payments: paymentRows.map(mapInvoicePayment),

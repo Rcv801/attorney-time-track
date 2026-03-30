@@ -67,18 +67,19 @@ const Invoices = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Invoices</h1>
-          <p className="mt-1 text-slate-600">Build, review, and track invoice payment status.</p>
+          <p className="section-title mb-1.5">Billing</p>
+          <h1 className="page-title">Invoices</h1>
+          <p className="page-subtitle">Build, review, and track invoice payment status.</p>
         </div>
-        <Button asChild>
+        <Button asChild className="btn-premium">
           <Link to="/invoices/new">New Invoice</Link>
         </Button>
       </div>
 
-      <Card className="premium-card rounded-xl border border-slate-200 shadow-md">
-        <CardHeader className="border-b border-slate-100">
-          <CardTitle className="font-bold text-slate-900">Invoice List</CardTitle>
-          <CardDescription className="text-slate-600">Live invoice balances, status, and receivables progress.</CardDescription>
+      <Card className="premium-card">
+        <CardHeader className="border-b border-slate-100/80 px-5">
+          <CardTitle className="text-[15px] font-bold text-slate-900">Invoice List</CardTitle>
+          <CardDescription className="text-[13px] text-slate-400">Live invoice balances, status, and receivables progress.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_220px] xl:grid-cols-[minmax(0,2fr)_220px_auto]">

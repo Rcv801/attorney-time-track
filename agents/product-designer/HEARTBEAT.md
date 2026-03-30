@@ -5,7 +5,7 @@ Run this every heartbeat.
 ## 1. Identity and Context
 
 - Confirm identity and assigned Paperclip work.
-- Read today's note in `$AGENT_HOME/memory/YYYY-MM-DD.md`.
+- Read today's note in `agents/product-designer/memory/YYYY-MM-DD.md`.
 
 ## 2. Core Priorities
 

@@ -555,8 +555,9 @@ const Reports = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Reports</h1>
-          <p className="mt-1 text-slate-600">Tight billing visibility for hours, revenue, and receivables.</p>
+          <p className="section-title mb-1.5">Analytics</p>
+          <h1 className="page-title">Reports</h1>
+          <p className="page-subtitle">Tight billing visibility for hours, revenue, and receivables.</p>
         </div>
         <Button
           variant="outline"

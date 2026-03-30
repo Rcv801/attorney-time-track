@@ -17,13 +17,17 @@ const EmptyState = ({
   icon,
 }: EmptyStateProps) => {
   return (
-    <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed border-slate-300 p-12 text-center animate-in fade-in-50 duration-500">
-      {icon && <div className="text-slate-400">{icon}</div>}
-      <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
-      <p className="max-w-md text-slate-600">{description}</p>
+    <div className="flex flex-col items-center justify-center space-y-5 rounded-xl p-14 text-center animate-in fade-in-50 duration-500"
+         style={{
+           background: 'linear-gradient(135deg, hsl(40 30% 98%) 0%, hsl(0 0% 100%) 100%)',
+           border: '2px dashed hsl(35 25% 85%)',
+         }}>
+      {icon && <div className="text-slate-300">{icon}</div>}
+      <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+      <p className="max-w-md text-[14px] text-slate-400 leading-relaxed">{description}</p>
       {buttonText && onButtonClick && (
-        <Button onClick={onButtonClick} size="lg">
-          <PlusCircle className="mr-2 h-5 w-5" />
+        <Button onClick={onButtonClick} size="lg" className="btn-premium gap-2 mt-2">
+          <PlusCircle className="h-4 w-4" />
           {buttonText}
         </Button>
       )}
