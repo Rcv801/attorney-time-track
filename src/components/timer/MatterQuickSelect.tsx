@@ -1,17 +1,28 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useTimer } from "@/hooks/useTimer";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Play, Pin, PinOff, Search, Plus } from "lucide-react";
+import { Play, Pin, PinOff, Search, Plus, Loader2 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Matter = Tables<"matters"> & { client: Tables<"clients"> };
 
@@ -31,10 +42,17 @@ function savePinnedIds(ids: string[]) {
 }
 
 const MatterQuickSelect = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const { actions, activeEntry } = useTimer();
   const [pinnedIds, setPinnedIds] = useState<string[]>(getPinnedIds);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [matterName, setMatterName] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("0");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Persist pinned IDs
@@ -88,6 +106,74 @@ const MatterQuickSelect = () => {
     return allMatters.slice(0, 6);
   }, [allMatters]);
 
+  const createClientAndMatter = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      if (!clientName.trim()) throw new Error("Client name is required");
+      if (!matterName.trim()) throw new Error("Matter name is required");
+
+      // Create the client
+      const { data: newClient, error: clientError } = await supabase
+        .from("clients")
+        .insert({
+          name: clientName.trim(),
+          hourly_rate: parseFloat(hourlyRate) || 0,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (clientError) throw clientError;
+      if (!newClient) throw new Error("Failed to create client.");
+
+      // Create the matter
+      const { data: newMatter, error: matterError } = await supabase
+        .from("matters")
+        .insert({
+          name: matterName.trim(),
+          client_id: newClient.id,
+          user_id: user.id,
+          status: "active",
+        })
+        .select()
+        .single();
+
+      if (matterError) {
+        // Rollback client creation if matter fails
+        await supabase.from("clients").delete().eq("id", newClient.id);
+        throw matterError;
+      }
+
+      return newMatter;
+    },
+    onSuccess: (newMatter) => {
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      qc.invalidateQueries({ queryKey: ["matters-for-clients"] });
+      qc.invalidateQueries({ queryKey: ["matters-all-active"] });
+      toast({ title: "Client and matter created" });
+
+      // Start timer on the new matter
+      actions.quickSwitch({
+        id: newMatter.id,
+        client_id: newMatter.client_id,
+        name: newMatter.name,
+      });
+
+      // Reset form and close dialog
+      setClientName("");
+      setMatterName("");
+      setHourlyRate("0");
+      setCreateDialogOpen(false);
+    },
+    onError: (e: Error) => {
+      toast({
+        title: "Failed to create client and matter",
+        description: e.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const togglePin = (matterId: string) => {
     setPinnedIds(prev =>
       prev.includes(matterId)
@@ -113,9 +199,100 @@ const MatterQuickSelect = () => {
 
   if (!allMatters?.length) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No active matters. Create a client and matter first.
-      </p>
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          No active matters. Create a client and matter first.
+        </p>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+          Create Client + Matter
+        </Button>
+
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Client and Matter</DialogTitle>
+              <DialogDescription>
+                Create a new client and their first matter to start tracking time.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="qs-client-name">Client Name *</Label>
+                <Input
+                  id="qs-client-name"
+                  placeholder="e.g., Acme Corp"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  disabled={createClientAndMatter.isPending}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="qs-matter-name">Matter Name *</Label>
+                <Input
+                  id="qs-matter-name"
+                  placeholder="e.g., Contract Review"
+                  value={matterName}
+                  onChange={(e) => setMatterName(e.target.value)}
+                  disabled={createClientAndMatter.isPending}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="qs-hourly-rate">Hourly Rate (optional)</Label>
+                <Input
+                  id="qs-hourly-rate"
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
+                  disabled={createClientAndMatter.isPending}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreateDialogOpen(false);
+                  setClientName("");
+                  setMatterName("");
+                  setHourlyRate("0");
+                }}
+                disabled={createClientAndMatter.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createClientAndMatter.mutate()}
+                disabled={
+                  !clientName.trim() ||
+                  !matterName.trim() ||
+                  createClientAndMatter.isPending
+                }
+                className="gap-2"
+              >
+                {createClientAndMatter.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    Create & Start
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     );
   }
 

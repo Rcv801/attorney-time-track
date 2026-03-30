@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -12,8 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Play, Pause, Square, Loader2, Search } from "lucide-react";
+import { Play, Pause, Square, Loader2, Search, Plus } from "lucide-react";
 import { useTimer } from "@/hooks/useTimer";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { formatDuration } from "@/lib/billing";
 import { cn } from "@/lib/utils";
 import QuickSwitchDialog from "./QuickSwitchDialog";
@@ -21,6 +24,9 @@ import QuickSwitchDialog from "./QuickSwitchDialog";
 type Matter = Tables<"matters"> & { client: Tables<"clients"> };
 
 const Timer = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const {
     activeEntry,
     elapsed,
@@ -31,7 +37,11 @@ const Timer = () => {
   } = useTimer();
 
   const [matterPickerOpen, setMatterPickerOpen] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [search, setSearch] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [matterName, setMatterName] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("0");
 
   const { data: matters = [] } = useQuery<Matter[]>({
     queryKey: ["matters-all-active"],
@@ -59,6 +69,72 @@ const Timer = () => {
     setMatterPickerOpen(false);
     setSearch("");
   };
+
+  const createClientAndMatter = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      if (!clientName.trim()) throw new Error("Client name is required");
+      if (!matterName.trim()) throw new Error("Matter name is required");
+
+      // Create the client
+      const { data: newClient, error: clientError } = await supabase
+        .from("clients")
+        .insert({
+          name: clientName.trim(),
+          hourly_rate: parseFloat(hourlyRate) || 0,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (clientError) throw clientError;
+      if (!newClient) throw new Error("Failed to create client.");
+
+      // Create the matter
+      const { data: newMatter, error: matterError } = await supabase
+        .from("matters")
+        .insert({
+          name: matterName.trim(),
+          client_id: newClient.id,
+          user_id: user.id,
+          status: "active",
+        })
+        .select()
+        .single();
+
+      if (matterError) {
+        // Rollback client creation if matter fails
+        await supabase.from("clients").delete().eq("id", newClient.id);
+        throw matterError;
+      }
+
+      return newMatter;
+    },
+    onSuccess: (newMatter) => {
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      qc.invalidateQueries({ queryKey: ["matters-for-clients"] });
+      qc.invalidateQueries({ queryKey: ["matters-all-active"] });
+      toast({ title: "Client and matter created" });
+
+      // Start timer on the new matter
+      actions.start(newMatter.id, newMatter.client_id);
+
+      // Reset form and close dialog
+      setClientName("");
+      setMatterName("");
+      setHourlyRate("0");
+      setShowCreateForm(false);
+      setMatterPickerOpen(false);
+      setSearch("");
+    },
+    onError: (e: Error) => {
+      toast({
+        title: "Failed to create client and matter",
+        description: e.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleTogglePlay = () => {
     if (isRunning) {
@@ -157,38 +233,123 @@ const Timer = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Search by client or matter"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          {!showCreateForm ? (
+            <>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Search by client or matter"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
 
-          <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
-            {filteredMatters.length > 0 ? (
-              filteredMatters.map((matter) => (
+              <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+                {filteredMatters.length > 0 ? (
+                  filteredMatters.map((matter) => (
+                    <Button
+                      key={matter.id}
+                      variant="outline"
+                      className="w-full justify-between h-auto py-2"
+                      onClick={() => handleStartForMatter(matter)}
+                    >
+                      <span className="text-left truncate pr-3">
+                        <span className="font-medium">{matter.client?.name ?? "Unknown client"}</span>
+                        <span className="text-muted-foreground">{" — "}{matter.name}</span>
+                      </span>
+                      <Play className="h-4 w-4 shrink-0" />
+                    </Button>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    No active matters match your search.
+                  </p>
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => setShowCreateForm(true)}
+              >
+                <Plus className="h-4 w-4" />
+                New Client + Matter
+              </Button>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="client-name">Client Name *</Label>
+                <Input
+                  id="client-name"
+                  placeholder="e.g., Acme Corp"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  disabled={createClientAndMatter.isPending}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="matter-name">Matter Name *</Label>
+                <Input
+                  id="matter-name"
+                  placeholder="e.g., Contract Review"
+                  value={matterName}
+                  onChange={(e) => setMatterName(e.target.value)}
+                  disabled={createClientAndMatter.isPending}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hourly-rate">Hourly Rate (optional)</Label>
+                <Input
+                  id="hourly-rate"
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
+                  disabled={createClientAndMatter.isPending}
+                />
+              </div>
+              <div className="flex gap-2">
                 <Button
-                  key={matter.id}
                   variant="outline"
-                  className="w-full justify-between h-auto py-2"
-                  onClick={() => handleStartForMatter(matter)}
+                  className="flex-1"
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setClientName("");
+                    setMatterName("");
+                    setHourlyRate("0");
+                  }}
+                  disabled={createClientAndMatter.isPending}
                 >
-                  <span className="text-left truncate pr-3">
-                    <span className="font-medium">{matter.client?.name ?? "Unknown client"}</span>
-                    <span className="text-muted-foreground">{" — "}{matter.name}</span>
-                  </span>
-                  <Play className="h-4 w-4 shrink-0" />
+                  Cancel
                 </Button>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                No active matters match your search.
-              </p>
-            )}
-          </div>
+                <Button
+                  className="flex-1 gap-2"
+                  onClick={() => createClientAndMatter.mutate()}
+                  disabled={
+                    !clientName.trim() ||
+                    !matterName.trim() ||
+                    createClientAndMatter.isPending
+                  }
+                >
+                  {createClientAndMatter.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      Create & Start
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
