@@ -168,13 +168,13 @@ const Timer = () => {
             {activeEntry ? activeEntry.matter?.name : "Timer"}
           </CardTitle>
           {activeEntry?.matter?.client && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-600">
               {activeEntry.matter.client.name}
             </p>
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-xl border border-border/70 bg-background/45 px-4 py-5">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/40 px-4 py-5">
             <div
               className={cn(
                 "text-4xl md:text-5xl font-mono font-bold text-center tabular-nums tracking-tight",
@@ -217,7 +217,7 @@ const Timer = () => {
             </Button>
           </div>
           {!activeEntry && (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center text-xs text-slate-600">
               Click play to choose a matter and start tracking.
             </p>
           )}
@@ -236,7 +236,7 @@ const Timer = () => {
           {!showCreateForm ? (
             <>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <Input
                   className="pl-9"
                   placeholder="Search by client or matter"
@@ -255,14 +255,14 @@ const Timer = () => {
                       onClick={() => handleStartForMatter(matter)}
                     >
                       <span className="text-left truncate pr-3">
-                        <span className="font-medium">{matter.client?.name ?? "Unknown client"}</span>
-                        <span className="text-muted-foreground">{" — "}{matter.name}</span>
+                        <span className="font-medium text-slate-900">{matter.client?.name ?? "Unknown client"}</span>
+                        <span className="text-slate-600">{" — "}{matter.name}</span>
                       </span>
                       <Play className="h-4 w-4 shrink-0" />
                     </Button>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-6">
+                  <p className="text-sm text-slate-600 text-center py-6">
                     No active matters match your search.
                   </p>
                 )}

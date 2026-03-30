@@ -189,8 +189,8 @@ const ClientsAndMatters = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Clients & Matters</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Clients & Matters</h1>
+          <p className="text-slate-600 mt-1">
             {clients?.length ?? 0} active client{clients?.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -215,7 +215,7 @@ const ClientsAndMatters = () => {
 
       {/* Search */}
       <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         <Input
           ref={searchRef}
           placeholder="Search clients... (⌘K)"
@@ -229,7 +229,7 @@ const ClientsAndMatters = () => {
         <div className="border rounded-lg overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-muted/30 text-xs text-muted-foreground uppercase tracking-wider">
+              <tr className="border-b border-slate-100 bg-slate-100/50 text-xs text-slate-600 uppercase tracking-wider font-semibold">
                 <th className="px-3 py-2 w-8"></th>
                 <th className="px-3 py-2 text-left">Name</th>
                 <th className="px-3 py-2 text-left">Rate</th>
@@ -243,8 +243,8 @@ const ClientsAndMatters = () => {
                 <React.Fragment key={letter}>
                   {/* Sticky letter header */}
                   <tr>
-                    <td colSpan={6} className="px-3 py-1.5 bg-muted/50 border-b sticky top-0 z-10">
-                      <span className="text-xs font-bold text-muted-foreground uppercase">{letter}</span>
+                    <td colSpan={6} className="px-3 py-1.5 bg-slate-100/60 border-b border-slate-100 sticky top-0 z-10">
+                      <span className="text-xs font-bold text-slate-600 uppercase">{letter}</span>
                     </td>
                   </tr>
                   {letterClients.map(client => {
@@ -253,19 +253,19 @@ const ClientsAndMatters = () => {
                     return (
                       <React.Fragment key={client.id}>
                         <tr
-                          className="group h-10 border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors"
+                          className="group h-10 border-b border-slate-200 hover:bg-slate-50/40 cursor-pointer transition-colors"
                           onClick={() => toggleExpand(client.id)}
                         >
                           <td className="px-3 w-8">
                             {counts && counts.total > 0 ? (
-                              isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              isExpanded ? <ChevronDown className="h-4 w-4 text-slate-600" /> : <ChevronRight className="h-4 w-4 text-slate-600" />
                             ) : <span className="w-4" />}
                           </td>
                           <td className="px-3">
                             <div>
-                              <span className="text-sm font-medium">{client.name}</span>
+                              <span className="text-sm font-medium text-slate-900">{client.name}</span>
                               {client.notes && (
-                                <span className="text-xs text-muted-foreground ml-2 hidden md:inline truncate max-w-[200px]">
+                                <span className="text-xs text-slate-600 ml-2 hidden md:inline truncate max-w-[200px]">
                                   — {client.notes}
                                 </span>
                               )}
@@ -278,10 +278,10 @@ const ClientsAndMatters = () => {
                                 {counts.active} active
                               </Badge>
                             ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
+                              <span className="text-xs text-slate-600">—</span>
                             )}
                           </td>
-                          <td className="px-3 text-sm text-muted-foreground whitespace-nowrap">
+                          <td className="px-3 text-sm text-slate-600 whitespace-nowrap">
                             {formatDate(client.updated_at)}
                           </td>
                           <td className="px-3 w-10" onClick={e => e.stopPropagation()}>
@@ -312,14 +312,14 @@ const ClientsAndMatters = () => {
                         {/* Expanded matters inline */}
                         {isExpanded && counts?.matters.map((matter) => (
                           <React.Fragment key={matter.id}>
-                            <tr className="h-9 border-b border-border/30 bg-muted/20">
+                            <tr className="h-9 border-b border-slate-100 bg-slate-50/40 hover:bg-slate-100/60">
                               <td className="px-3"></td>
                               <td className="px-3 pl-8" colSpan={2}>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs text-muted-foreground font-mono">
+                                  <span className="text-xs text-slate-600 font-mono">
                                     {matter.matter_number ? `#${matter.matter_number}` : ""}
                                   </span>
-                                  <span className="text-sm">{matter.name}</span>
+                                  <span className="text-sm text-slate-900">{matter.name}</span>
                                   <Badge
                                     variant={matter.status === "active" ? "default" : "secondary"}
                                     className="text-[10px] px-1.5 py-0 capitalize"
@@ -331,13 +331,13 @@ const ClientsAndMatters = () => {
                                   </Badge>
                                 </div>
                               </td>
-                              <td className="px-3 text-sm tabular-nums text-muted-foreground">
+                              <td className="px-3 text-sm tabular-nums text-slate-600">
                                 ${getEffectiveRate(matter.hourly_rate, client.hourly_rate)}/hr
                               </td>
-                              <td className="px-3 text-xs text-muted-foreground">{formatDate(matter.updated_at)}</td>
+                              <td className="px-3 text-xs text-slate-600">{formatDate(matter.updated_at)}</td>
                               <td></td>
                             </tr>
-                            <tr className="border-b border-border/30 bg-muted/10">
+                            <tr className="border-b border-slate-100 bg-slate-50/60">
                               <td></td>
                               <td colSpan={5} className="px-3 pb-4 pl-10 pr-3 pt-2">
                                 <MatterTrustPanel client={client} matter={matter} />
@@ -354,7 +354,7 @@ const ClientsAndMatters = () => {
           </table>
         </div>
       ) : search ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-slate-600">
           No clients match "{search}"
         </div>
       ) : (

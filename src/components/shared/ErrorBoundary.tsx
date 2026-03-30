@@ -35,16 +35,16 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
           <div className="max-w-md w-full text-center space-y-6">
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl font-bold text-slate-900">Something went wrong</h1>
+              <p className="text-slate-600">
                 An unexpected error occurred. You can try again or return to the dashboard.
               </p>
             </div>
             {this.state.error && (
-              <pre className="rounded-md bg-muted p-4 text-left text-xs text-muted-foreground overflow-auto max-h-32">
+              <pre className="rounded-md bg-slate-100 border border-slate-200 p-4 text-left text-xs text-slate-700 overflow-auto max-h-32">
                 {this.state.error.message}
               </pre>
             )}
