@@ -296,10 +296,10 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
 
   return (
     <>
-      <Card className="border-dashed bg-background/80 shadow-none">
+      <Card className="border-dashed bg-white/80 shadow-none">
         <CardContent className="grid gap-4 p-4 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
           <div className="space-y-4">
-            <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="rounded-lg border bg-slate-50 border-slate-100 p-4">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Landmark className="h-4 w-4" />
                 Trust Balance
@@ -307,21 +307,21 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
               <p className="mt-2 text-2xl font-semibold tabular-nums">
                 {isBalanceLoading ? "Loading..." : formatCurrency(currentBalance)}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-slate-500">
                 Last activity {formatDate(trustBalance?.last_transaction_at ?? trustBalance?.last_transaction_date)}
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               <div className="rounded-lg border p-3">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
                   <ArrowDownCircle className="h-3.5 w-3.5" />
                   Total Deposits
                 </div>
                 <p className="mt-2 text-lg font-semibold tabular-nums">{formatCurrency(totals.inflows)}</p>
               </div>
               <div className="rounded-lg border p-3">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
                   <ArrowUpCircle className="h-3.5 w-3.5" />
                   Total Drawdowns
                 </div>
@@ -341,7 +341,7 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
               </Button>
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Trust entries are append-only. Corrections should be entered as new ledger activity, never edits.
             </p>
           </div>
@@ -351,7 +351,7 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
                   <p className="text-sm font-medium">Open invoices for this matter</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     Apply trust directly against outstanding balances without leaving the matter view.
                   </p>
                 </div>
@@ -363,7 +363,7 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
                     <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                       <div>
                         <p className="text-sm font-medium">{invoice.invoice_number}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-slate-500">
                           Issued {formatDate(invoice.created_at)} • {invoice.status}
                         </p>
                       </div>
@@ -371,14 +371,14 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
                         <p className="text-sm font-semibold tabular-nums">
                           {formatCurrency(invoice.balance_due)}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-slate-500">
                           Trust applied {formatCurrency(invoice.trust_applied)}
                         </p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="px-4 py-6 text-sm text-muted-foreground">
+                  <div className="px-4 py-6 text-sm text-slate-500">
                     No open invoices for this matter yet.
                   </div>
                 )}
@@ -389,15 +389,15 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
                   <p className="text-sm font-medium">Recent trust ledger</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     Matter-specific trust history with running balance snapshots.
                   </p>
                 </div>
-                <ReceiptText className="h-4 w-4 text-muted-foreground" />
+                <ReceiptText className="h-4 w-4 text-slate-500" />
               </div>
 
               {isLedgerLoading ? (
-                <div className="px-4 py-6 text-sm text-muted-foreground">Loading trust ledger...</div>
+                <div className="px-4 py-6 text-sm text-slate-500">Loading trust ledger...</div>
               ) : ledgerEntries?.length ? (
                 <Table>
                   <TableHeader>
@@ -436,7 +436,7 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
                   </TableBody>
                 </Table>
               ) : (
-                <div className="px-4 py-6 text-sm text-muted-foreground">
+                <div className="px-4 py-6 text-sm text-slate-500">
                   No trust activity recorded for this matter yet.
                 </div>
               )}
@@ -486,7 +486,7 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500">
                   {TRANSACTION_OPTIONS.find((option) => option.value === intent)?.help}
                 </p>
               </div>
@@ -503,7 +503,7 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500">
                   Available trust balance: {formatCurrency(currentBalance)}
                 </p>
               </div>
@@ -525,7 +525,7 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
                   </SelectContent>
                 </Select>
                 {selectedInvoice && (
-                  <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  <div className="rounded-md border bg-slate-50 border-slate-100 px-3 py-2 text-xs text-slate-500">
                     Outstanding balance: {formatCurrency(selectedInvoice.balance_due)}
                     <br />
                     Already applied from trust: {formatCurrency(selectedInvoice.trust_applied)}
@@ -579,7 +579,7 @@ export default function MatterTrustPanel({ client, matter }: MatterTrustPanelPro
 
             <Separator />
 
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-slate-500">
               Matter balance after this entry will be validated in the database. Invalid negative trust balances are rejected automatically.
             </div>
           </div>

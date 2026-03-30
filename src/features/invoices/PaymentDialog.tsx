@@ -24,6 +24,7 @@ interface PaymentDialogProps {
   invoiceId: string;
   invoiceNumber: string;
   balanceDueCents: number;
+  disabled?: boolean;
 }
 
 export default function PaymentDialog({
@@ -32,6 +33,7 @@ export default function PaymentDialog({
   invoiceId,
   invoiceNumber,
   balanceDueCents,
+  disabled = false,
 }: PaymentDialogProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -43,14 +45,14 @@ export default function PaymentDialog({
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    if (!open) {
-      setAmount("");
+    if (open) {
+      setAmount(balanceDueCents > 0 ? (balanceDueCents / 100).toFixed(2) : "");
       setPaymentDate(new Date().toISOString().slice(0, 10));
       setPaymentMethod("check");
       setReferenceNumber("");
       setNotes("");
     }
-  }, [open]);
+  }, [open, balanceDueCents]);
 
   const paymentMutation = useMutation({
     mutationFn: async () => {
@@ -109,6 +111,7 @@ export default function PaymentDialog({
   });
 
   const isPaidInFull = balanceDueCents <= 0;
+  const isReadOnly = disabled || isPaidInFull;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,9 +125,9 @@ export default function PaymentDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
-          <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Remaining balance</span>
+              <span className="text-slate-600">Remaining balance</span>
               <span className="font-semibold">{formatCurrencyFromCents(balanceDueCents)}</span>
             </div>
           </div>
@@ -137,7 +140,7 @@ export default function PaymentDialog({
               placeholder="0.00"
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
-              disabled={isPaidInFull || paymentMutation.isPending}
+              disabled={isReadOnly || paymentMutation.isPending}
             />
           </div>
 
@@ -149,7 +152,7 @@ export default function PaymentDialog({
                 type="date"
                 value={paymentDate}
                 onChange={(event) => setPaymentDate(event.target.value)}
-                disabled={isPaidInFull || paymentMutation.isPending}
+                disabled={isReadOnly || paymentMutation.isPending}
               />
             </div>
             <div className="space-y-2">
@@ -157,7 +160,7 @@ export default function PaymentDialog({
               <Select
                 value={paymentMethod}
                 onValueChange={(value) => setPaymentMethod(value as (typeof PAYMENT_METHODS)[number]["value"])}
-                disabled={isPaidInFull || paymentMutation.isPending}
+                disabled={isReadOnly || paymentMutation.isPending}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a method" />
@@ -180,7 +183,7 @@ export default function PaymentDialog({
               placeholder="Check # or transfer note"
               value={referenceNumber}
               onChange={(event) => setReferenceNumber(event.target.value)}
-              disabled={isPaidInFull || paymentMutation.isPending}
+              disabled={isReadOnly || paymentMutation.isPending}
             />
           </div>
 
@@ -191,12 +194,16 @@ export default function PaymentDialog({
               placeholder="Optional collection note"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              disabled={isPaidInFull || paymentMutation.isPending}
+              disabled={isReadOnly || paymentMutation.isPending}
             />
           </div>
 
+          {disabled && !isPaidInFull && (
+            <p className="text-sm text-slate-500">Payments can only be recorded after the invoice leaves draft status.</p>
+          )}
+
           {isPaidInFull && (
-            <p className="text-sm text-muted-foreground">This invoice is already fully paid.</p>
+            <p className="text-sm text-slate-500">This invoice is already fully paid.</p>
           )}
         </div>
 
@@ -204,7 +211,7 @@ export default function PaymentDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={paymentMutation.isPending}>
             Close
           </Button>
-          <Button onClick={() => paymentMutation.mutate()} disabled={isPaidInFull || paymentMutation.isPending}>
+          <Button onClick={() => paymentMutation.mutate()} disabled={isReadOnly || paymentMutation.isPending}>
             {paymentMutation.isPending ? "Saving..." : "Save Payment"}
           </Button>
         </DialogFooter>

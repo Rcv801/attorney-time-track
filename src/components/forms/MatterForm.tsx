@@ -85,7 +85,7 @@ export function MatterForm({ onSubmit, defaultValues, isSubmitting }: MatterForm
                     </SelectItem>
                   ))}
                   {clients?.length === 0 && (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    <div className="px-2 py-1.5 text-sm text-slate-500">
                       No clients yet. Create one first.
                     </div>
                   )}

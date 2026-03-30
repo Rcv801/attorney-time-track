@@ -200,7 +200,7 @@ const MatterQuickSelect = () => {
   if (!allMatters?.length) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-slate-500">
           No active matters. Create a client and matter first.
         </p>
         <Button
@@ -323,10 +323,10 @@ const MatterQuickSelect = () => {
                 </Button>
                 <button
                   onClick={(e) => { e.stopPropagation(); togglePin(matter.id); }}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-slate-100/60"
                   aria-label="Unpin matter"
                 >
-                  <PinOff className="h-3 w-3 text-muted-foreground" />
+                  <PinOff className="h-3 w-3 text-slate-500" />
                 </button>
               </div>
             );
@@ -334,7 +334,7 @@ const MatterQuickSelect = () => {
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-500">
             No pinned matters yet. Use one of these to start now:
           </p>
           <div className="flex flex-wrap gap-2">
@@ -367,7 +367,7 @@ const MatterQuickSelect = () => {
       {/* Add matter button with search popover */}
       <Popover open={searchOpen} onOpenChange={setSearchOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-slate-500">
             <Plus className="h-3.5 w-3.5" />
             Add to Quick Start
           </Button>
@@ -375,7 +375,7 @@ const MatterQuickSelect = () => {
         <PopoverContent className="w-80 p-0" align="start">
           <div className="p-3 border-b">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
               <Input
                 ref={searchInputRef}
                 placeholder="Search matters..."
@@ -393,22 +393,22 @@ const MatterQuickSelect = () => {
                   <button
                     key={matter.id}
                     onClick={() => togglePin(matter.id)}
-                    className="w-full flex items-center justify-between rounded-md px-2.5 py-2 text-sm hover:bg-muted transition-colors text-left"
+                    className="w-full flex items-center justify-between rounded-md px-2.5 py-2 text-sm hover:bg-slate-100/60 transition-colors text-left"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{matter.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{matter.client?.name}</p>
+                      <p className="text-xs text-slate-500 truncate">{matter.client?.name}</p>
                     </div>
                     {isPinned ? (
-                      <PinOff className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-2" />
+                      <PinOff className="h-3.5 w-3.5 text-slate-500 shrink-0 ml-2" />
                     ) : (
-                      <Pin className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-2" />
+                      <Pin className="h-3.5 w-3.5 text-slate-500 shrink-0 ml-2" />
                     )}
                   </button>
                 );
               })
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No matters found</p>
+              <p className="text-sm text-slate-500 text-center py-4">No matters found</p>
             )}
           </div>
         </PopoverContent>
