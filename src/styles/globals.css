@@ -173,17 +173,17 @@
 
   .sidebar-nav-item {
     @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200;
-    color: hsl(215 15% 65%);
+    color: hsl(215 20% 82%);
   }
 
   .sidebar-nav-item:hover {
-    color: hsl(215 10% 90%);
-    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .sidebar-nav-active {
     color: white !important;
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.10) !important;
   }
 
   .sidebar-nav-active::before {
