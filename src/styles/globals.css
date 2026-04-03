@@ -179,7 +179,7 @@
      TYPOGRAPHY
      ═══════════════════════════════════════════ */
   .section-title {
-    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400;
+    @apply text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500;
   }
 
   .page-title {
@@ -198,8 +198,8 @@
   }
 
   .sidebar-nav-item {
-    @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200;
-    color: hsl(215 20% 75%);
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-semibold transition-all duration-200;
+    color: hsl(215 15% 88%);
   }
 
   .sidebar-nav-item:hover {

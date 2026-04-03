@@ -59,7 +59,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 px-2.5 py-4" role="navigation" aria-label="Main navigation">
         {!isCollapsed && (
-          <p className="px-3 pb-2.5 text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'hsl(215 15% 50%)' }}>
+          <p className="px-3 pb-2.5 text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: 'hsl(215 15% 70%)' }}>
             Navigation
           </p>
         )}
@@ -112,7 +112,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
                   'sidebar-nav-item w-full hover:!text-red-300',
                   isCollapsed && 'justify-center px-2'
                 )}
-                style={{ color: 'hsl(215 15% 65%)' }}
+                style={{ color: 'hsl(215 15% 85%)' }}
               >
                 <LogOut className="h-[18px] w-[18px] shrink-0" />
                 {!isCollapsed && <span>Sign Out</span>}
@@ -127,9 +127,9 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
         </TooltipProvider>
 
         {!isCollapsed && (
-          <div className="mt-3 px-3 text-[10px]" style={{ color: 'hsl(215 15% 48%)' }}>
+          <div className="mt-3 px-3 text-[10px]" style={{ color: 'hsl(215 15% 70%)' }}>
             <kbd className="rounded border px-1.5 py-0.5 font-mono text-[10px]"
-                 style={{ borderColor: 'hsl(215 25% 25%)', background: 'hsl(215 30% 16%)', color: 'hsl(215 15% 65%)' }}>
+                 style={{ borderColor: 'hsl(215 25% 30%)', background: 'hsl(215 30% 20%)', color: 'hsl(215 15% 80%)' }}>
               Ctrl+K
             </kbd>{' '}
             quick switch
