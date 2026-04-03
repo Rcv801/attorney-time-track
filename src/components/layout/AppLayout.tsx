@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { cn } from '@/lib/utils';
 import React, { useEffect, useState } from 'react';
 import QuickSwitchDialog from '../timer/QuickSwitchDialog';
+import TopTimerBar from '../timer/TopTimerBar';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
@@ -51,6 +52,9 @@ const AppLayout = () => {
           </Sheet>
         </header>
 
+        {/* Mobile timer bar */}
+        <TopTimerBar />
+
         <main className="min-h-0 flex-1 overflow-auto main-content-bg">
           <div className="mx-auto w-full max-w-7xl p-4 md:p-6">
             <Outlet />
@@ -65,27 +69,32 @@ const AppLayout = () => {
           className="h-screen w-full items-stretch"
         >
           <ResizablePanel
-            defaultSize={20}
-            minSize={15}
-            maxSize={25}
+            defaultSize={18}
+            minSize={14}
+            maxSize={22}
             collapsible
             collapsedSize={4}
             onCollapse={() => setIsCollapsed(true)}
             onExpand={() => setIsCollapsed(false)}
             className={cn(
-              'min-w-[50px] sidebar-gradient transition-all duration-300 ease-in-out shadow-lg',
+              'min-w-[50px] sidebar-gradient transition-all duration-300 ease-in-out shadow-xl',
               isCollapsed && 'min-w-[70px]'
             )}
           >
             <Sidebar isCollapsed={isCollapsed} />
           </ResizablePanel>
           <ResizableHandle withHandle className="bg-border hover:bg-border/80" />
-          <ResizablePanel defaultSize={80} minSize={60}>
-            <main className="h-full overflow-auto main-content-bg">
-              <div className="mx-auto max-w-7xl p-6 lg:p-8">
-                <Outlet />
-              </div>
-            </main>
+          <ResizablePanel defaultSize={82} minSize={60}>
+            <div className="flex h-full flex-col">
+              {/* Persistent timer bar — always visible */}
+              <TopTimerBar />
+              {/* Page content */}
+              <main className="flex-1 overflow-auto main-content-bg">
+                <div className="mx-auto max-w-7xl p-6 lg:p-8">
+                  <Outlet />
+                </div>
+              </main>
+            </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

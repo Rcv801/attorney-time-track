@@ -86,6 +86,32 @@
 
 @layer components {
   /* ═══════════════════════════════════════════
+     PERSISTENT TOP TIMER BAR
+     The signature structural element — always
+     visible, pinned above page content.
+     ═══════════════════════════════════════════ */
+
+  .top-timer-bar {
+    @apply flex items-center justify-between px-5 py-2.5 shrink-0;
+    height: 52px;
+    background: linear-gradient(90deg, hsl(220 42% 11%) 0%, hsl(215 45% 15%) 50%, hsl(220 38% 12%) 100%);
+    border-bottom: 1px solid hsl(215 30% 20%);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .timer-bar-play-btn {
+    background: linear-gradient(135deg, hsl(38 90% 50%) 0%, hsl(35 85% 42%) 100%);
+    @apply text-white shadow-md;
+  }
+
+  .timer-bar-play-btn:hover {
+    background: linear-gradient(135deg, hsl(38 90% 55%) 0%, hsl(35 85% 47%) 100%);
+    @apply shadow-lg;
+  }
+
+  /* ═══════════════════════════════════════════
      PREMIUM CARD SYSTEM
      ═══════════════════════════════════════════ */
 
@@ -165,20 +191,20 @@
   }
 
   /* ═══════════════════════════════════════════
-     SIDEBAR
+     SIDEBAR — Deep, serious, established
      ═══════════════════════════════════════════ */
   .sidebar-gradient {
-    background: linear-gradient(175deg, hsl(215 45% 16%) 0%, hsl(220 40% 11%) 100%);
+    background: linear-gradient(175deg, hsl(220 42% 13%) 0%, hsl(222 40% 9%) 100%);
   }
 
   .sidebar-nav-item {
     @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200;
-    color: hsl(215 20% 82%);
+    color: hsl(215 20% 75%);
   }
 
   .sidebar-nav-item:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.07);
   }
 
   .sidebar-nav-active {

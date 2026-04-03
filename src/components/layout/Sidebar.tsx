@@ -44,7 +44,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
           </div>
           {!isCollapsed && (
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-[10px] uppercase tracking-[0.12em] font-semibold" style={{ color: 'hsl(215 20% 72%)' }}>
+              <p className="truncate text-[10px] uppercase tracking-[0.14em] font-bold" style={{ color: 'hsl(38 50% 55%)' }}>
                 SixMin Legal
               </p>
               <p className="truncate text-[15px] font-bold tracking-tight text-white">TimeTrack</p>
@@ -54,12 +54,12 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
       </div>
 
       {/* Divider */}
-      <div className="mx-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, hsl(215 30% 28%), transparent)' }} />
+      <div className="mx-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, hsl(215 30% 22%), transparent)' }} />
 
       {/* Nav */}
       <nav className="flex-1 px-2.5 py-4" role="navigation" aria-label="Main navigation">
         {!isCollapsed && (
-          <p className="px-3 pb-2.5 text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'hsl(215 15% 58%)' }}>
+          <p className="px-3 pb-2.5 text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'hsl(215 15% 50%)' }}>
             Navigation
           </p>
         )}
@@ -99,7 +99,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
       </nav>
 
       {/* Divider */}
-      <div className="mx-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, hsl(215 30% 28%), transparent)' }} />
+      <div className="mx-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, hsl(215 30% 22%), transparent)' }} />
 
       {/* Footer */}
       <div className="px-2.5 py-3">
@@ -112,7 +112,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
                   'sidebar-nav-item w-full hover:!text-red-300',
                   isCollapsed && 'justify-center px-2'
                 )}
-                style={{ color: 'hsl(215 15% 72%)' }}
+                style={{ color: 'hsl(215 15% 65%)' }}
               >
                 <LogOut className="h-[18px] w-[18px] shrink-0" />
                 {!isCollapsed && <span>Sign Out</span>}
@@ -127,9 +127,9 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
         </TooltipProvider>
 
         {!isCollapsed && (
-          <div className="mt-3 px-3 text-[10px]" style={{ color: 'hsl(215 15% 55%)' }}>
+          <div className="mt-3 px-3 text-[10px]" style={{ color: 'hsl(215 15% 48%)' }}>
             <kbd className="rounded border px-1.5 py-0.5 font-mono text-[10px]"
-                 style={{ borderColor: 'hsl(215 25% 30%)', background: 'hsl(215 30% 20%)', color: 'hsl(215 15% 70%)' }}>
+                 style={{ borderColor: 'hsl(215 25% 25%)', background: 'hsl(215 30% 16%)', color: 'hsl(215 15% 65%)' }}>
               Ctrl+K
             </kbd>{' '}
             quick switch

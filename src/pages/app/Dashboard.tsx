@@ -1,6 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, DollarSign, FileText, TrendingUp, Plus, Sparkles, Loader2, Edit2, X } from "lucide-react";
-import Timer from "@/components/timer/Timer";
+import { Clock, DollarSign, FileText, TrendingUp, Plus, Sparkles, Loader2, Edit2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +12,6 @@ import ManualEntryDialog from "@/components/timer/ManualEntryDialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 
 type Entry = Tables<"entries"> & { matter: Tables<"matters"> & { client: Tables<"clients"> } };
 
@@ -126,12 +123,15 @@ const Dashboard = () => {
             })}
           </p>
         </div>
-        <div className="hidden md:flex">
-          <div className="gold-badge">
-            <span className="status-dot status-dot-active mr-2 animate-pulse" />
-            Tracking ready
-          </div>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 hover:border-amber-300 self-start md:self-auto"
+          onClick={() => setManualEntryOpen(true)}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Manual Entry
+        </Button>
       </div>
 
       {/* Stats row */}
@@ -189,9 +189,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Timer — front and center */}
-      <Timer />
-
       {/* Quick Start + Today's entries */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="premium-card overflow-hidden">
@@ -209,15 +206,9 @@ const Dashboard = () => {
         <div className="premium-card overflow-hidden">
           <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100/80">
             <h3 className="text-[15px] font-bold text-slate-900">Today's Entries</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 hover:border-amber-300"
-              onClick={() => setManualEntryOpen(true)}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Entry
-            </Button>
+            <span className="text-[12px] font-semibold text-slate-400 tabular-nums">
+              {completedEntries} {completedEntries === 1 ? 'entry' : 'entries'}
+            </span>
           </div>
           <div className="p-5">
             {entries && entries.filter(e => e.end_at).length > 0 ? (
